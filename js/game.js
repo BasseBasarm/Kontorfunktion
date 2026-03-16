@@ -108,6 +108,13 @@ export class Game {
                     if (this.introTimer >= this.introDuration) {
                         this.showIntro = false;
                     }
+                    // During intro: don't move player or check collisions
+                    this.input.clearTouchTarget();
+                    this.input.clearJustPressed();
+                    this.timer.update(dt);
+                    for (const npc of this.npcs) npc.update(dt, this.tilemap);
+                    this.updateCamera();
+                    break;
                 }
                 this.timer.update(dt);
                 this.player.update(dt, this.input, this.tilemap);
@@ -404,6 +411,10 @@ export class Game {
         this.showIntro = true;
         this.introTimer = 0;
         this.state = STATE.PLAYING;
+
+        // Clear any touch target from the Start button click
+        this.input.clearTouchTarget();
+        this.input.clearJustPressed();
     }
 
     renderIntroMessage(ctx) {
