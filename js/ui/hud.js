@@ -55,30 +55,6 @@ export class HUD {
     }
 
     renderTouchControls(ctx, input) {
-        if (!input.isTouchActive()) return;
-
-        const joy = input.getTouchJoystick();
-
-        ctx.beginPath();
-        ctx.arc(joy.originX, joy.originY, 50, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        const dx = joy.currentX - joy.originX;
-        const dy = joy.currentY - joy.originY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const maxDist = 40;
-        const clampedDist = Math.min(dist, maxDist);
-        const angle = Math.atan2(dy, dx);
-        const knobX = joy.originX + Math.cos(angle) * clampedDist;
-        const knobY = joy.originY + Math.sin(angle) * clampedDist;
-
-        ctx.beginPath();
-        ctx.arc(knobX, knobY, 18, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fill();
+        // No visible controls needed — tap-to-move is intuitive
     }
 }

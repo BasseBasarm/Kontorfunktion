@@ -67,8 +67,9 @@ export class Game {
         // Pre-calculate elevated objects for z-sorting
         this.elevatedObjects = this.mapRenderer.getElevatedObjects();
 
-        // Attach canvas for touch input
+        // Attach canvas for touch input + camera for screen-to-world
         this.input.attachCanvas(canvas);
+        this.input.setCamera(this.camera);
 
         // Start title screen
         this.titleScreen.activate(canvas);
@@ -315,6 +316,7 @@ export class Game {
             this.state = STATE.DIALOGUE;
             this.dialoguesCompleted++;
             this.audio.playDialogueStart();
+            this.input.clearTouchTarget();
         }
     }
 

@@ -48,7 +48,7 @@ export class Player {
             return;
         }
 
-        const { dx: rawDx, dy: rawDy } = input.getMovement();
+        const { dx: rawDx, dy: rawDy } = input.getMovement(this.col, this.row);
         const speed = MOVE_SPEED * dt / 1000;
 
         if (rawDx !== 0 || rawDy !== 0) {
