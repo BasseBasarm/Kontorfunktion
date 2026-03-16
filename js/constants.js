@@ -2,19 +2,21 @@
 export const TILE_WIDTH = 64;
 export const TILE_HEIGHT = 32;
 
-// Canvas dimensions
+// Display canvas dimensions
 export const CANVAS_WIDTH = 960;
 export const CANVAS_HEIGHT = 640;
 
-// Camera zoom (1.0 = no zoom, higher = closer)
-export const CAMERA_SCALE = 2.0;
+// Internal pixel-art resolution (rendered at 1:1, then scaled up)
+export const INTERNAL_WIDTH = 480;
+export const INTERNAL_HEIGHT = 320;
+export const PIXEL_SCALE = 2; // Integer scale-up: 480*2=960, 320*2=640
 
 // Map dimensions (in tiles)
-export const MAP_COLS = 20;
-export const MAP_ROWS = 16;
+export const MAP_COLS = 22;
+export const MAP_ROWS = 19;
 
 // Wall height in pixels (Habbo-style — not too tall)
-export const WALL_HEIGHT = 38;
+export const WALL_HEIGHT = 22;
 
 // Character dimensions
 export const CHAR_WIDTH = 20;
@@ -25,7 +27,7 @@ export const MOVE_SPEED = 3.5; // tiles per second
 export const MOVE_INTERPOLATION = 0.12; // smooth movement factor
 
 // Timer
-export const TIMER_START = 239; // 3:59 in seconds
+export const TIMER_START = 179; // 2:59 in seconds
 export const TIMER_WARNING = 60; // seconds remaining for warning state
 export const TIMER_CRITICAL = 30; // seconds remaining for critical state
 
@@ -73,6 +75,12 @@ export const TILE = {
     DESK_EMPTY: 27,
     RECYCLING_BIN: 28,
     COAT_RACK: 29,
+    SINK: 30,
+    MINISTER_DESK: 31,
+    TOILET_SIGN: 32,
+    DESK_CLUTTERED: 33,
+    DESK_TECH: 34,
+    DYING_PLANT: 35,
 };
 
 // Which tiles block movement

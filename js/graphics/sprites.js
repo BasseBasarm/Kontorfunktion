@@ -1,23 +1,60 @@
 import { PALETTE as P } from './palette.js';
 
-// Habbo-style chunky character sprites
-// Characters are drawn programmatically with big heads, small bodies, thick outlines
+// Habbo-style chunky character sprites — pixel-art version
+// Characters drawn with fillRect only — no arcs, ellipses, or curves
+
+// Sprite cache: key = configHash+pose → offscreen canvas
+const _spriteCache = new Map();
+const SPRITE_W = 32;
+const SPRITE_H = 56;
+const SPRITE_CX = 16;
+const SPRITE_CY = 52;
+// Display scale: sprites are drawn small then nearest-neighbor scaled up
+// At 480x320 @2x, we need 1.5x to match the visual size from 320x213 @3x
+const SPRITE_DISPLAY_SCALE = 1.5;
+const DISPLAY_W = Math.round(SPRITE_W * SPRITE_DISPLAY_SCALE);
+const DISPLAY_H = Math.round(SPRITE_H * SPRITE_DISPLAY_SCALE);
+const DISPLAY_CX = Math.round(SPRITE_CX * SPRITE_DISPLAY_SCALE);
+const DISPLAY_CY = Math.round(SPRITE_CY * SPRITE_DISPLAY_SCALE);
+
+function _configKey(config, pose) {
+    return `${config.skinTone}|${config.hairColor}|${config.hairStyle}|${config.shirtColor}|${config.pantsColor}|${config.gender || 'male'}|${config.isChief ? 1 : 0}|${config.hasGlasses ? 1 : 0}|${config.beard || 'none'}|${pose}`;
+}
+
+// Get or create a cached sprite
+function getCachedSprite(config, pose) {
+    const key = _configKey(config, pose);
+    let cached = _spriteCache.get(key);
+    if (!cached) {
+        const canvas = document.createElement('canvas');
+        canvas.width = SPRITE_W;
+        canvas.height = SPRITE_H;
+        const sctx = canvas.getContext('2d');
+        sctx.imageSmoothingEnabled = false;
+        _drawCharacterDirect(sctx, SPRITE_CX, SPRITE_CY, config, pose);
+        cached = canvas;
+        _spriteCache.set(key, cached);
+    }
+    return cached;
+}
 
 // Pre-render a character sprite to an offscreen canvas
 export function createCharacterSprite(config) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 36;
-    canvas.height = 54;
-    const ctx = canvas.getContext('2d');
-
-    drawCharacter(ctx, 18, 50, config);
-
-    return canvas;
+    return getCachedSprite(config, 'standing');
 }
 
-// Draw a Habbo-style character at (cx, bottomY)
-// pose: 'standing' (default), 'typing', 'walking', 'phone', 'stretching'
+// Draw a character using cached sprite — nearest-neighbor scaled up
 export function drawCharacter(ctx, cx, bottomY, config, pose = 'standing') {
+    const sprite = getCachedSprite(config, pose);
+    // imageSmoothingEnabled should already be false on the target ctx
+    ctx.drawImage(sprite,
+        0, 0, SPRITE_W, SPRITE_H,
+        Math.round(cx) - DISPLAY_CX, Math.round(bottomY) - DISPLAY_CY,
+        DISPLAY_W, DISPLAY_H);
+}
+
+// Direct drawing — used internally for cache population
+function _drawCharacterDirect(ctx, cx, bottomY, config, pose = 'standing') {
     const {
         skinTone = P.SKIN_LIGHT,
         hairColor = P.HAIR_BROWN,
@@ -26,249 +63,331 @@ export function drawCharacter(ctx, cx, bottomY, config, pose = 'standing') {
         pantsColor = P.PANTS_DARK,
         gender = 'male',
         isChief = false,
+        hasGlasses = false,
+        beard = 'none',
     } = config;
 
     const outline = P.WALL_OUTLINE;
-    const s = 1.12;
 
     ctx.save();
-    ctx.translate(cx, bottomY);
+    ctx.translate(Math.round(cx), Math.round(bottomY));
 
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Ground shadow (flat pixel diamond)
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillRect(-6, -1, 12, 2);
+    ctx.fillRect(-4, -2, 8, 1);
+    ctx.fillRect(-4, 1, 8, 1);
 
+    const isSitting = pose === 'sitting' || pose === 'sitting_typing';
+    // Sitting pose: shift upper body down, draw bent legs
+    if (isSitting) {
+        // Feet (forward, flat on ground)
+        ctx.fillStyle = P.SHOES_DARK;
+        ctx.fillRect(-6, -2, 5, 3);
+        ctx.fillRect(1, -2, 5, 3);
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-6, -2, 5, 3);
+        ctx.strokeRect(1, -2, 5, 3);
+        // Lower legs (vertical, short)
+        ctx.fillStyle = pantsColor;
+        ctx.fillRect(-5, -7, 4, 6);
+        ctx.fillRect(1, -7, 4, 6);
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-5, -7, 4, 6);
+        ctx.strokeRect(1, -7, 4, 6);
+        // Thighs (horizontal, going forward — the seated part)
+        ctx.fillStyle = pantsColor;
+        ctx.fillRect(-6, -10, 12, 4);
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-6, -10, 12, 4);
+    } else {
     // Shoes
     ctx.fillStyle = P.SHOES_DARK;
     if (pose === 'walking') {
-        // Walking: staggered feet
-        ctx.fillRect(-7 * s, -4 * s, 5 * s, 4 * s);
-        ctx.fillRect(2 * s, -5 * s, 5 * s, 4 * s);
+        ctx.fillRect(-7, -4, 5, 4);
+        ctx.fillRect(2, -5, 5, 4);
     } else {
-        ctx.fillRect(-6 * s, -4 * s, 5 * s, 4 * s);
-        ctx.fillRect(1 * s, -4 * s, 5 * s, 4 * s);
+        ctx.fillRect(-6, -4, 5, 4);
+        ctx.fillRect(1, -4, 5, 4);
+    }
+    // Shoe outline
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 1;
+    if (pose === 'walking') {
+        ctx.strokeRect(-7, -4, 5, 4);
+        ctx.strokeRect(2, -5, 5, 4);
+    } else {
+        ctx.strokeRect(-6, -4, 5, 4);
+        ctx.strokeRect(1, -4, 5, 4);
     }
 
     // Legs / pants
     ctx.fillStyle = pantsColor;
     if (pose === 'walking') {
-        ctx.fillRect(-6 * s, -12 * s, 4 * s, 9 * s);
-        ctx.fillRect(2 * s, -13 * s, 4 * s, 9 * s);
+        ctx.fillRect(-6, -12, 4, 9);
+        ctx.fillRect(2, -13, 4, 9);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-6 * s, -12 * s, 4 * s, 9 * s);
-        ctx.strokeRect(2 * s, -13 * s, 4 * s, 9 * s);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-6, -12, 4, 9);
+        ctx.strokeRect(2, -13, 4, 9);
     } else {
-        ctx.fillRect(-5 * s, -12 * s, 4 * s, 9 * s);
-        ctx.fillRect(1 * s, -12 * s, 4 * s, 9 * s);
+        ctx.fillRect(-5, -12, 4, 9);
+        ctx.fillRect(1, -12, 4, 9);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-5 * s, -12 * s, 4 * s, 9 * s);
-        ctx.strokeRect(1 * s, -12 * s, 4 * s, 9 * s);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-5, -12, 4, 9);
+        ctx.strokeRect(1, -12, 4, 9);
     }
+    } // end non-sitting legs
+
+    // Sitting offset: shift upper body down so character appears seated
+    const sitOffset = isSitting ? 6 : 0;
+    if (isSitting) ctx.translate(0, sitOffset);
 
     // Torso / shirt
     ctx.fillStyle = shirtColor;
     if (gender === 'female') {
-        ctx.beginPath();
-        ctx.moveTo(-6 * s, -12 * s);
-        ctx.lineTo(-7 * s, -18 * s);
-        ctx.lineTo(-5 * s, -22 * s);
-        ctx.lineTo(5 * s, -22 * s);
-        ctx.lineTo(7 * s, -18 * s);
-        ctx.lineTo(6 * s, -12 * s);
-        ctx.closePath();
-        ctx.fill();
+        // Slightly shaped torso
+        ctx.fillRect(-6, -22, 12, 11);
+        ctx.fillRect(-7, -19, 1, 4);
+        ctx.fillRect(6, -19, 1, 4);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-7, -22, 14, 11);
     } else if (gender === 'nonbinary') {
-        // Slim tapered torso — distinct from both male and female
-        ctx.beginPath();
-        ctx.moveTo(-5 * s, -12 * s);
-        ctx.lineTo(-6 * s, -17 * s);
-        ctx.lineTo(-5 * s, -22 * s);
-        ctx.lineTo(5 * s, -22 * s);
-        ctx.lineTo(6 * s, -17 * s);
-        ctx.lineTo(5 * s, -12 * s);
-        ctx.closePath();
-        ctx.fill();
+        ctx.fillRect(-6, -22, 12, 11);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-6, -22, 12, 11);
     } else {
-        ctx.fillRect(-6 * s, -22 * s, 12 * s, 11 * s);
+        ctx.fillRect(-6, -22, 12, 11);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-6 * s, -22 * s, 12 * s, 11 * s);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-6, -22, 12, 11);
     }
+
+    // Shirt detail - subtle collar line
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(0, -22, 1, 6);
 
     // Arms (pose-dependent)
     ctx.fillStyle = shirtColor;
-    if (pose === 'typing') {
-        // Arms forward (bent down toward keyboard)
-        ctx.fillRect(-8 * s, -20 * s, 3 * s, 7 * s);
-        ctx.fillRect(5 * s, -20 * s, 3 * s, 7 * s);
+    if (pose === 'sitting_typing' || pose === 'typing') {
+        ctx.fillRect(-8, -20, 3, 7);
+        ctx.fillRect(5, -20, 3, 7);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-8 * s, -20 * s, 3 * s, 7 * s);
-        ctx.strokeRect(5 * s, -20 * s, 3 * s, 7 * s);
-        // Hands in front
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-8, -20, 3, 7);
+        ctx.strokeRect(5, -20, 3, 7);
         ctx.fillStyle = skinTone;
-        ctx.fillRect(-5 * s, -13 * s, 3 * s, 3 * s);
-        ctx.fillRect(2 * s, -13 * s, 3 * s, 3 * s);
+        ctx.fillRect(-5, -13, 3, 3);
+        ctx.fillRect(2, -13, 3, 3);
     } else if (pose === 'phone') {
-        // Left arm normal, right arm raised to ear
-        ctx.fillRect(-9 * s, -21 * s, 3 * s, 9 * s);
-        ctx.fillRect(5 * s, -24 * s, 3 * s, 6 * s);
+        ctx.fillRect(-9, -21, 3, 9);
+        ctx.fillRect(5, -24, 3, 6);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-9 * s, -21 * s, 3 * s, 9 * s);
-        ctx.strokeRect(5 * s, -24 * s, 3 * s, 6 * s);
-        // Left hand normal
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-9, -21, 3, 9);
+        ctx.strokeRect(5, -24, 3, 6);
         ctx.fillStyle = skinTone;
-        ctx.fillRect(-9 * s, -12 * s, 3 * s, 3 * s);
-        // Right hand with phone near head
-        ctx.fillRect(5 * s, -27 * s, 3 * s, 3 * s);
-        // Phone rectangle
-        ctx.fillStyle = '#383838';
-        ctx.fillRect(5.5 * s, -31 * s, 2 * s, 4 * s);
+        ctx.fillRect(-9, -12, 3, 3);
+        ctx.fillRect(5, -27, 3, 3);
+        ctx.fillStyle = '#303030';
+        ctx.fillRect(6, -31, 2, 4);
     } else if (pose === 'stretching') {
-        // Both arms raised up
-        ctx.fillRect(-9 * s, -28 * s, 3 * s, 9 * s);
-        ctx.fillRect(6 * s, -28 * s, 3 * s, 9 * s);
+        ctx.fillRect(-9, -28, 3, 9);
+        ctx.fillRect(6, -28, 3, 9);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-9 * s, -28 * s, 3 * s, 9 * s);
-        ctx.strokeRect(6 * s, -28 * s, 3 * s, 9 * s);
-        // Hands up
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-9, -28, 3, 9);
+        ctx.strokeRect(6, -28, 3, 9);
         ctx.fillStyle = skinTone;
-        ctx.fillRect(-9 * s, -31 * s, 3 * s, 3 * s);
-        ctx.fillRect(6 * s, -31 * s, 3 * s, 3 * s);
+        ctx.fillRect(-9, -31, 3, 3);
+        ctx.fillRect(6, -31, 3, 3);
+    } else if (pose === 'carrying') {
+        ctx.fillRect(-5, -20, 10, 3);
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-5, -20, 10, 3);
+        ctx.fillStyle = skinTone;
+        ctx.fillRect(-6, -20, 3, 3);
+        ctx.fillRect(5, -20, 3, 3);
+        // Paper stack
+        ctx.fillStyle = '#F0EBE0';
+        ctx.fillRect(-4, -23, 8, 3);
+        ctx.strokeStyle = '#A09080';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-4, -23, 8, 3);
+        ctx.fillStyle = '#C0B8A8';
+        ctx.fillRect(-2, -22, 4, 1);
+        ctx.fillRect(-2, -21, 5, 1);
     } else {
-        // Default standing arms
-        ctx.fillRect(-9 * s, -21 * s, 3 * s, 9 * s);
-        ctx.fillRect(6 * s, -21 * s, 3 * s, 9 * s);
+        ctx.fillRect(-9, -21, 3, 9);
+        ctx.fillRect(6, -21, 3, 9);
         ctx.strokeStyle = outline;
-        ctx.lineWidth = 1.2;
-        ctx.strokeRect(-9 * s, -21 * s, 3 * s, 9 * s);
-        ctx.strokeRect(6 * s, -21 * s, 3 * s, 9 * s);
-        // Hands
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-9, -21, 3, 9);
+        ctx.strokeRect(6, -21, 3, 9);
         ctx.fillStyle = skinTone;
-        ctx.fillRect(-9 * s, -12 * s, 3 * s, 3 * s);
-        ctx.fillRect(6 * s, -12 * s, 3 * s, 3 * s);
+        ctx.fillRect(-9, -12, 3, 3);
+        ctx.fillRect(6, -12, 3, 3);
     }
 
     // Neck
     ctx.fillStyle = skinTone;
-    ctx.fillRect(-2 * s, -25 * s, 4 * s, 4 * s);
+    ctx.fillRect(-2, -25, 4, 4);
 
-    // Head (big Habbo-style head)
+    // Head (pixel-art oval using stacked fillRects)
     ctx.fillStyle = skinTone;
-    ctx.beginPath();
-    ctx.ellipse(0, -32 * s, 8 * s, 9 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Build an oval ~16px wide, ~18px tall centered at (0, -32)
+    ctx.fillRect(-5, -40, 10, 1);  // top
+    ctx.fillRect(-7, -39, 14, 1);
+    ctx.fillRect(-8, -38, 16, 2);
+    ctx.fillRect(-8, -36, 16, 6);  // main body
+    ctx.fillRect(-8, -30, 16, 2);
+    ctx.fillRect(-7, -28, 14, 1);
+    ctx.fillRect(-5, -27, 10, 1);
+    ctx.fillRect(-4, -26, 8, 1);   // bottom
+    // Head outline
     ctx.strokeStyle = outline;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.lineWidth = 1;
+    // Top edge
+    ctx.fillStyle = outline;
+    ctx.fillRect(-5, -41, 10, 1);
+    ctx.fillRect(-7, -40, 2, 1);
+    ctx.fillRect(5, -40, 2, 1);
+    ctx.fillRect(-8, -39, 1, 1);
+    ctx.fillRect(7, -39, 1, 1);
+    // Sides
+    ctx.fillRect(-9, -38, 1, 10);
+    ctx.fillRect(8, -38, 1, 10);
+    // Bottom edge
+    ctx.fillRect(-8, -28, 1, 1);
+    ctx.fillRect(7, -28, 1, 1);
+    ctx.fillRect(-7, -27, 2, 1);
+    ctx.fillRect(5, -27, 2, 1);
+    ctx.fillRect(-5, -26, 1, 1);
+    ctx.fillRect(4, -26, 1, 1);
+    ctx.fillRect(-4, -25, 8, 1);
 
     // Hair
     ctx.fillStyle = hairColor;
-    drawHair(ctx, hairStyle, gender, s);
+    drawHair(ctx, hairStyle, gender);
 
-    // Eyes (simple dots)
-    ctx.fillStyle = '#1C1810';
-    ctx.fillRect(-3 * s, -33 * s, 2 * s, 2 * s);
-    ctx.fillRect(1 * s, -33 * s, 2 * s, 2 * s);
+    // Eyebrows
+    ctx.fillStyle = hairColor;
+    ctx.fillRect(-4, -36, 3, 1);
+    ctx.fillRect(1, -36, 3, 1);
 
-    // Chief marker — small glasses
-    if (isChief) {
-        ctx.strokeStyle = '#404040';
+    // Eyes (pixel squares)
+    // Eye whites
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(-4, -35, 3, 3);
+    ctx.fillRect(1, -35, 3, 3);
+    // Pupils
+    ctx.fillStyle = '#181410';
+    ctx.fillRect(-3, -34, 2, 2);
+    ctx.fillRect(2, -34, 2, 2);
+
+    // Mouth
+    ctx.fillStyle = '#7B5B40';
+    ctx.fillRect(-2, -29, 4, 1);
+
+    // Glasses
+    if (isChief || hasGlasses) {
+        ctx.strokeStyle = '#303030';
         ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.rect(-4 * s, -34 * s, 3 * s, 3 * s);
-        ctx.rect(1 * s, -34 * s, 3 * s, 3 * s);
-        ctx.moveTo(-1 * s, -33 * s);
-        ctx.lineTo(1 * s, -33 * s);
-        ctx.stroke();
+        ctx.strokeRect(-5, -36, 4, 4);
+        ctx.strokeRect(1, -36, 4, 4);
+        // Bridge
+        ctx.fillStyle = '#303030';
+        ctx.fillRect(-1, -34, 2, 1);
+    }
+
+    // Beard
+    if (beard === 'stubble') {
+        ctx.fillStyle = hairColor;
+        ctx.globalAlpha = 0.35;
+        ctx.fillRect(-4, -29, 7, 3);
+        ctx.globalAlpha = 1;
+    } else if (beard === 'full') {
+        ctx.fillStyle = hairColor;
+        ctx.fillRect(-3, -29, 6, 2);
+        ctx.fillRect(-4, -28, 8, 2);
+        ctx.fillRect(-3, -26, 6, 1);
+        ctx.fillRect(-2, -25, 4, 1);
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-4, -29, 8, 5);
     }
 
     ctx.restore();
 }
 
-function drawHair(ctx, style, gender, s) {
+function drawHair(ctx, style, gender) {
     switch (style) {
         case 'bald':
-            // No hair — just draw nothing
             break;
         case 'short':
-            // Short cropped - covers top of head
-            ctx.beginPath();
-            ctx.ellipse(0, -35 * s, 8 * s, 6 * s, 0, Math.PI, 0);
-            ctx.fill();
+            // Flat cap on top of head
+            ctx.fillRect(-6, -41, 12, 3);
+            ctx.fillRect(-7, -39, 14, 1);
             break;
         case 'medium':
-            // Medium length
-            ctx.beginPath();
-            ctx.ellipse(0, -35 * s, 9 * s, 7 * s, 0, Math.PI, 0);
-            ctx.fill();
-            // Side bits
-            ctx.fillRect(-8 * s, -35 * s, 3 * s, 6 * s);
-            ctx.fillRect(5 * s, -35 * s, 3 * s, 6 * s);
+            // Wider, with sideburns
+            ctx.fillRect(-7, -41, 14, 4);
+            ctx.fillRect(-8, -39, 16, 1);
+            ctx.fillRect(-9, -38, 2, 5);
+            ctx.fillRect(7, -38, 2, 5);
             break;
         case 'long':
-            // Long hair - covers more
-            ctx.beginPath();
-            ctx.ellipse(0, -35 * s, 9 * s, 7 * s, 0, Math.PI, 0);
-            ctx.fill();
-            ctx.fillRect(-9 * s, -36 * s, 3 * s, 14 * s);
-            ctx.fillRect(6 * s, -36 * s, 3 * s, 14 * s);
+            // Long hair with sides going down
+            ctx.fillRect(-7, -41, 14, 4);
+            ctx.fillRect(-8, -39, 16, 1);
+            ctx.fillRect(-9, -38, 2, 14);
+            ctx.fillRect(7, -38, 2, 14);
             break;
         case 'bun':
-            // Bun style
-            ctx.beginPath();
-            ctx.ellipse(0, -35 * s, 8 * s, 6 * s, 0, Math.PI, 0);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(0, -42 * s, 4 * s, 0, Math.PI * 2);
-            ctx.fill();
+            // Cap + bun on top
+            ctx.fillRect(-6, -41, 12, 3);
+            ctx.fillRect(-7, -39, 14, 1);
+            // Bun
+            ctx.fillRect(-3, -46, 6, 4);
+            ctx.fillRect(-2, -47, 4, 1);
             break;
         case 'curly':
-            // Curly / afro
-            ctx.beginPath();
-            ctx.ellipse(0, -34 * s, 10 * s, 10 * s, 0, Math.PI * 0.1, Math.PI * 0.9);
-            ctx.fill();
+            // Wide curly mass
+            ctx.fillRect(-8, -42, 16, 5);
+            ctx.fillRect(-9, -41, 18, 3);
+            ctx.fillRect(-10, -40, 2, 6);
+            ctx.fillRect(8, -40, 2, 6);
             break;
         case 'buzz':
-            // Very short buzz cut
-            ctx.beginPath();
-            ctx.ellipse(0, -36 * s, 7 * s, 5 * s, 0, Math.PI, 0);
-            ctx.fill();
+            // Very short, just a thin cap
+            ctx.fillRect(-6, -41, 12, 2);
+            ctx.fillRect(-7, -40, 14, 1);
             break;
         case 'ponytail':
-            ctx.beginPath();
-            ctx.ellipse(0, -35 * s, 8 * s, 6 * s, 0, Math.PI, 0);
-            ctx.fill();
+            // Cap + ponytail to the side
+            ctx.fillRect(-6, -41, 12, 3);
+            ctx.fillRect(-7, -39, 14, 1);
             // Ponytail
-            ctx.fillRect(4 * s, -38 * s, 4 * s, 3 * s);
-            ctx.beginPath();
-            ctx.ellipse(8 * s, -33 * s, 3 * s, 5 * s, 0.3, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillRect(6, -40, 3, 3);
+            ctx.fillRect(8, -38, 3, 6);
+            ctx.fillRect(9, -32, 2, 3);
             break;
         case 'headscarf':
-            // Headscarf/hijab
-            ctx.beginPath();
-            ctx.ellipse(0, -34 * s, 10 * s, 9 * s, 0, Math.PI * 0.05, Math.PI * 0.95);
-            ctx.fill();
-            ctx.fillRect(-8 * s, -34 * s, 16 * s, 10 * s);
+            // Wide covering
+            ctx.fillRect(-9, -42, 18, 6);
+            ctx.fillRect(-10, -40, 20, 2);
+            ctx.fillRect(-9, -36, 18, 6);
             break;
         default:
-            // Default short
-            ctx.beginPath();
-            ctx.ellipse(0, -35 * s, 8 * s, 6 * s, 0, Math.PI, 0);
-            ctx.fill();
+            ctx.fillRect(-6, -41, 12, 3);
+            ctx.fillRect(-7, -39, 14, 1);
     }
 }
 
@@ -281,6 +400,7 @@ export const NPC_CONFIGS = {
         shirtColor: P.SHIRT_BLUE,
         pantsColor: P.PANTS_NAVY,
         gender: 'male',
+        beard: 'stubble',
     },
     kollega_moede: {
         skinTone: P.SKIN_MEDIUM,
@@ -297,6 +417,8 @@ export const NPC_CONFIGS = {
         shirtColor: P.SHIRT_GREY,
         pantsColor: P.PANTS_DARK,
         gender: 'male',
+        hasGlasses: true,
+        beard: 'stubble',
     },
     f2_superbruger: {
         skinTone: P.SKIN_LIGHT,
@@ -307,12 +429,12 @@ export const NPC_CONFIGS = {
         gender: 'female',
     },
     sekretaer: {
-        skinTone: P.SKIN_TAN,
-        hairColor: P.HAIR_BLACK,
-        hairStyle: 'bun',
-        shirtColor: P.SHIRT_PINK,
-        pantsColor: P.PANTS_DARK,
-        gender: 'female',
+        skinTone: P.SKIN_LIGHT,
+        hairColor: P.HAIR_LIGHT_BROWN,
+        hairStyle: 'short',
+        shirtColor: P.SHIRT_LIGHTBLUE,
+        pantsColor: P.PANTS_NAVY,
+        gender: 'male',
     },
     smalltalk: {
         skinTone: P.SKIN_LIGHT,
@@ -321,6 +443,7 @@ export const NPC_CONFIGS = {
         shirtColor: P.SHIRT_WHITE,
         pantsColor: P.PANTS_GREY,
         gender: 'male',
+        beard: 'full',
     },
     raadgiver: {
         skinTone: P.SKIN_LIGHT,
@@ -337,6 +460,7 @@ export const NPC_CONFIGS = {
         shirtColor: P.SHIRT_LIGHTBLUE,
         pantsColor: P.PANTS_DARK,
         gender: 'male',
+        hasGlasses: true,
     },
     kaffe: {
         skinTone: P.SKIN_TAN,
@@ -362,5 +486,14 @@ export const NPC_CONFIGS = {
         pantsColor: P.PANTS_NAVY,
         gender: 'female',
         isChief: true,
+    },
+    minister: {
+        skinTone: P.SKIN_LIGHT,
+        hairColor: P.HAIR_GREY,
+        hairStyle: 'bun',
+        shirtColor: '#4A5068',
+        pantsColor: P.PANTS_NAVY,
+        gender: 'female',
+        hasGlasses: true,
     },
 };

@@ -14,6 +14,7 @@ export class Player {
         this.animFrame = 0;
         this.animTimer = 0;
         this.walkCycle = 0;
+        this.blockedTimer = 0; // Event-driven movement block
 
         // Random hair color
         const hairColors = [P.HAIR_BLONDE, P.HAIR_LIGHT_BROWN, P.HAIR_BROWN, P.HAIR_DARK, P.HAIR_RED, P.HAIR_BLACK];
@@ -29,39 +30,65 @@ export class Player {
         };
     }
 
+    blockFor(ms) {
+        this.blockedTimer = Math.max(this.blockedTimer, ms);
+    }
+
     update(dt, input, tilemap) {
-        const { dx, dy } = input.getMovement();
+        // Event-driven block — player can't move
+        if (this.blockedTimer > 0) {
+            this.blockedTimer -= dt;
+            this.moving = false;
+            this.walkCycle = 0;
+            this.animTimer += dt;
+            if (this.animTimer > 500) {
+                this.animTimer = 0;
+                this.animFrame = (this.animFrame + 1) % 2;
+            }
+            return;
+        }
+
+        const { dx: rawDx, dy: rawDy } = input.getMovement();
         const speed = MOVE_SPEED * dt / 1000;
 
-        if (dx !== 0 || dy !== 0) {
+        if (rawDx !== 0 || rawDy !== 0) {
             this.moving = true;
 
-            // Update facing direction
-            if (Math.abs(dx) >= Math.abs(dy)) {
-                this.facing = dx > 0 ? 'right' : 'left';
+            // Facing direction based on screen-space input
+            if (Math.abs(rawDx) >= Math.abs(rawDy)) {
+                this.facing = rawDx > 0 ? 'right' : 'left';
             } else {
-                this.facing = dy > 0 ? 'down' : 'up';
+                this.facing = rawDy > 0 ? 'down' : 'up';
             }
 
-            // Calculate new target position
-            let newCol = this.col + dx * speed;
-            let newRow = this.row + dy * speed;
+            let sdx = rawDx;
+            let sdy = rawDy;
 
-            // Check collision for X movement
-            const testColX = Math.round(this.col + dx * speed);
-            const testRowX = Math.round(this.row);
-            if (tilemap.isWalkable(testColX, testRowX)) {
-                this.col = newCol;
+            // Normalize diagonal in screen space
+            if (sdx !== 0 && sdy !== 0) {
+                sdx *= Math.SQRT1_2;
+                sdy *= Math.SQRT1_2;
             }
 
-            // Check collision for Y movement
-            const testColY = Math.round(this.col);
-            const testRowY = Math.round(this.row + dy * speed);
-            if (tilemap.isWalkable(testColY, testRowY)) {
-                this.row = newRow;
+            const hCol = sdx * 0.5 * speed;
+            const hRow = -sdx * 0.5 * speed;
+            const vCol = sdy * speed;
+            const vRow = sdy * speed;
+
+            const nextCol1 = this.col + hCol;
+            const nextRow1 = this.row + hRow;
+            if (tilemap.isWalkable(Math.round(nextCol1), Math.round(nextRow1))) {
+                this.col = nextCol1;
+                this.row = nextRow1;
             }
 
-            // Clamp to map bounds
+            const nextCol2 = this.col + vCol;
+            const nextRow2 = this.row + vRow;
+            if (tilemap.isWalkable(Math.round(nextCol2), Math.round(nextRow2))) {
+                this.col = nextCol2;
+                this.row = nextRow2;
+            }
+
             this.col = clamp(this.col, 1, tilemap.cols - 2);
             this.row = clamp(this.row, 1, tilemap.rows - 2);
 
@@ -86,8 +113,8 @@ export class Player {
 
     render(ctx, camera) {
         const iso = cartToIso(this.col, this.row);
-        const screenX = iso.x - camera.x + camera.offsetX;
-        const screenY = iso.y - camera.y + camera.offsetY;
+        const screenX = Math.round(iso.x - camera.x + camera.offsetX);
+        const screenY = Math.round(iso.y - camera.y + camera.offsetY);
 
         // Idle bob offset
         const bobOffset = !this.moving && this.animFrame === 1 ? -1 : 0;
@@ -97,23 +124,23 @@ export class Player {
 
         const y = screenY + bobOffset + walkBounce;
 
-        // Player highlight — subtle circle under feet
-        ctx.fillStyle = 'rgba(104, 136, 168, 0.35)';
-        ctx.beginPath();
-        ctx.ellipse(screenX, screenY + 2, 10, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // Player highlight — pixel diamond under feet
+        ctx.fillStyle = 'rgba(104, 136, 168, 0.45)';
+        ctx.fillRect(screenX - 12, screenY + 1, 24, 2);
+        ctx.fillRect(screenX - 9, screenY - 1, 18, 2);
+        ctx.fillRect(screenX - 9, screenY + 3, 18, 2);
+        ctx.fillRect(screenX - 6, screenY - 3, 12, 2);
+        ctx.fillRect(screenX - 6, screenY + 5, 12, 2);
 
         drawCharacter(ctx, screenX, y, this.config);
 
-        // Small arrow above head
-        const arrowBob = Math.sin(Date.now() / 300) * 2;
+        // Small arrow above head (pixel triangle)
+        const arrowBob = Math.floor(Math.sin(Date.now() / 300) * 3);
+        const ay = y - 75 + arrowBob;
         ctx.fillStyle = 'rgba(104, 136, 168, 0.7)';
-        ctx.beginPath();
-        ctx.moveTo(screenX, y - 50 + arrowBob);
-        ctx.lineTo(screenX - 4, y - 56 + arrowBob);
-        ctx.lineTo(screenX + 4, y - 56 + arrowBob);
-        ctx.closePath();
-        ctx.fill();
+        ctx.fillRect(screenX, ay, 2, 3);
+        ctx.fillRect(screenX - 2, ay - 3, 6, 3);
+        ctx.fillRect(screenX - 4, ay - 6, 10, 3);
     }
 
     // Grid position (rounded for collision)

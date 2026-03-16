@@ -11,6 +11,8 @@ export const NPC_STATE = {
     AT_PRINTER: 'AT_PRINTER',
     LOOKING_AT_PHONE: 'LOOKING_AT_PHONE',
     STRETCHING: 'STRETCHING',
+    CARRYING_PAPERS: 'CARRYING_PAPERS',
+    SIGHING: 'SIGHING',
 };
 
 // Duration ranges in ms for each state
@@ -21,6 +23,8 @@ const DURATIONS = {
     AT_PRINTER: [2000, 5000],
     LOOKING_AT_PHONE: [3000, 6000],
     STRETCHING: [1500, 3000],
+    CARRYING_PAPERS: [4000, 8000],
+    SIGHING: [2000, 4000],
 };
 
 // Behavior weights for picking next action (higher = more likely)
@@ -30,7 +34,9 @@ const BEHAVIOR_WEIGHTS = [
     { state: NPC_STATE.AT_COFFEE, weight: 12 },
     { state: NPC_STATE.AT_PRINTER, weight: 8 },
     { state: NPC_STATE.LOOKING_AT_PHONE, weight: 10 },
-    { state: NPC_STATE.STRETCHING, weight: 10 },
+    { state: NPC_STATE.STRETCHING, weight: 8 },
+    { state: NPC_STATE.CARRYING_PAPERS, weight: 6 },
+    { state: NPC_STATE.SIGHING, weight: 5 },
 ];
 
 const totalWeight = BEHAVIOR_WEIGHTS.reduce((s, b) => s + b.weight, 0);
@@ -54,8 +60,9 @@ export class NPCBehavior {
     constructor(homeCol, homeRow) {
         this.homeCol = homeCol;
         this.homeRow = homeRow;
-        this.state = NPC_STATE.IDLE;
-        this.timer = getDuration(NPC_STATE.IDLE);
+        // Start with a work behavior so NPCs look busy from the start
+        this.state = Math.random() < 0.7 ? NPC_STATE.TYPING : NPC_STATE.IDLE;
+        this.timer = getDuration(this.state);
         this.path = null;
         this.pathIndex = 0;
         this.walkSpeed = 2.2; // tiles per second (slower than player's 3.5)
@@ -70,6 +77,8 @@ export class NPCBehavior {
             case NPC_STATE.STRETCHING:
             case NPC_STATE.AT_COFFEE:
             case NPC_STATE.AT_PRINTER:
+            case NPC_STATE.CARRYING_PAPERS:
+            case NPC_STATE.SIGHING:
                 this.timer -= dt;
                 if (this.timer <= 0) {
                     this.pickNextBehavior(npc, tilemap);
@@ -125,6 +134,8 @@ export class NPCBehavior {
             this.walkTo(npc, tilemap, POINTS_OF_INTEREST.coffee_machine, NPC_STATE.AT_COFFEE);
         } else if (nextState === NPC_STATE.AT_PRINTER) {
             this.walkTo(npc, tilemap, POINTS_OF_INTEREST.printer, NPC_STATE.AT_PRINTER);
+        } else if (nextState === NPC_STATE.CARRYING_PAPERS) {
+            this.walkTo(npc, tilemap, POINTS_OF_INTEREST.printer, NPC_STATE.CARRYING_PAPERS);
         } else if (nextState === NPC_STATE.TYPING || nextState === NPC_STATE.IDLE) {
             // Go back to home desk area
             this.walkToHome(npc, tilemap, nextState);
@@ -177,12 +188,18 @@ export class NPCBehavior {
         }
     }
 
-    getPose() {
+    getPose(atDesk = false, isSeated = false) {
+        if (isSeated) {
+            if (this.state === NPC_STATE.TYPING) return 'sitting_typing';
+            if (this.state === NPC_STATE.IDLE || this.state === NPC_STATE.LOOKING_AT_PHONE) return 'sitting';
+        }
         switch (this.state) {
             case NPC_STATE.TYPING: return 'typing';
             case NPC_STATE.WALKING: return 'walking';
             case NPC_STATE.LOOKING_AT_PHONE: return 'phone';
             case NPC_STATE.STRETCHING: return 'stretching';
+            case NPC_STATE.CARRYING_PAPERS: return 'carrying';
+            case NPC_STATE.SIGHING: return 'standing';
             default: return 'standing';
         }
     }

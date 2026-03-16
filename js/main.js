@@ -6,7 +6,6 @@ window.addEventListener('DOMContentLoaded', () => {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
 
-    // Disable image smoothing for crisp pixel art
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 

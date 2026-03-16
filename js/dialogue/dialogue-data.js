@@ -45,20 +45,24 @@ export const DIALOGUE_DATA = {
     hr: {
         A: {
             lines: [
-                { speaker: 'HR', text: 'Jeg kan se, at dine tidsregistreringer for sidste måned fortsat står som kladde.' },
+                { speaker: 'HR', text: 'Hov, hov — et øjeblik.' },
+                { speaker: 'Dig', text: 'Jeg har lidt travlt...' },
+                { speaker: 'HR', text: 'Dine tidsregistreringer for sidste måned står stadig som kladde.' },
                 { speaker: 'Dig', text: 'Jeg har arbejdet hele måneden.' },
                 { speaker: 'HR', text: 'Det betvivler jeg ikke. Men systemet kan jo kun forholde sig til det, der er tastet ind.' },
             ],
-            timeCost: 11,
+            timeCost: 12,
         },
         B: {
             lines: [
+                { speaker: 'HR', text: 'Lige præcis dig ville jeg gerne snakke med.' },
+                { speaker: 'Dig', text: 'Kan det vente? Jeg har en deadline.' },
                 { speaker: 'HR', text: 'Du har registreret nul timer i sidste måned.' },
                 { speaker: 'Dig', text: 'Det passer ikke.' },
                 { speaker: 'HR', text: 'Det er i hvert fald det, systemet fortæller mig.' },
                 { speaker: 'HR', text: '...Og systemet tager sjældent fejl.' },
             ],
-            timeCost: 10,
+            timeCost: 12,
         },
     },
 
@@ -84,7 +88,7 @@ export const DIALOGUE_DATA = {
     sekretaer: {
         A: {
             lines: [
-                { speaker: 'Sekretær', text: 'Hun er i et kort møde.' },
+                { speaker: 'Sekretær', text: 'Ministeren er i et kort møde.' },
                 { speaker: 'Dig', text: 'Hvor kort?' },
                 { speaker: 'Sekretær', text: 'Det startede i morges.' },
             ],
@@ -92,11 +96,12 @@ export const DIALOGUE_DATA = {
         },
         B: {
             lines: [
-                { speaker: 'Sekretær', text: 'Hun har blokket kalenderen.' },
+                { speaker: 'Sekretær', text: 'Han har blokket kalenderen.' },
                 { speaker: 'Dig', text: 'Med hvad?' },
                 { speaker: 'Sekretær', text: 'Strategisk tænkning.' },
             ],
-            timeCost: 7,
+            timeCost: 0,
+            timeBonus: 7,
         },
     },
 
@@ -106,6 +111,7 @@ export const DIALOGUE_DATA = {
                 { speaker: 'Kollega', text: 'Nå, hvordan går det?' },
                 { speaker: 'Dig', text: 'Jeg leder efter chefen.' },
                 { speaker: 'Kollega', text: 'Det gør vi alle sammen.' },
+                { speaker: 'Kollega', text: 'Kontorchefen er vist på toilettet.' },
             ],
             timeCost: 7,
         },
@@ -122,19 +128,23 @@ export const DIALOGUE_DATA = {
     raadgiver: {
         A: {
             lines: [
-                { speaker: 'Rådgiver', text: 'Har du tænkt den politiske vinkel ind?' },
-                { speaker: 'Dig', text: 'Det er bare en status på næste uges fredagsbar.' },
-                { speaker: 'Rådgiver', text: 'Netop derfor.' },
+                { speaker: 'Særlig rådgiver', text: 'Vi skal nok lige koordinere fredagsbaren.' },
+                { speaker: 'Dig', text: 'Hvordan?' },
+                { speaker: 'Særlig rådgiver', text: 'Med et møde.' },
+                { speaker: 'Dig', text: 'Kan mødet ikke bare være en mail?' },
+                { speaker: 'Særlig rådgiver', text: 'Det undersøger vi på mødet.' },
             ],
-            timeCost: 9,
+            timeCost: 11,
         },
         B: {
             lines: [
-                { speaker: 'Rådgiver', text: 'Vi skal risikovurdere den.' },
-                { speaker: 'Dig', text: 'Det er en fredagsbar.' },
-                { speaker: 'Rådgiver', text: 'Der kan opstå narrativer.' },
+                { speaker: 'Særlig rådgiver', text: 'Jeg har et hurtigt spørgsmål om fredagsbaren.' },
+                { speaker: 'Dig', text: 'Jeg har travlt!' },
+                { speaker: 'Særlig rådgiver', text: 'Det tager kun et øjeblik.' },
+                { speaker: 'Særlig rådgiver', text: '...' },
+                { speaker: 'Særlig rådgiver', text: 'Jeg sender lige en mødeindkaldelse.' },
             ],
-            timeCost: 12,
+            timeCost: 10,
         },
     },
 
@@ -171,6 +181,7 @@ export const DIALOGUE_DATA = {
                 { speaker: 'Kollega', text: 'Jeg har skåret ned på kaffe.' },
                 { speaker: 'Dig', text: 'Hvorfor?' },
                 { speaker: 'Kollega', text: 'Jeg kunne mærke min puls stige, når vi sagde "leveranceplan".' },
+                { speaker: 'Kollega', text: 'Forresten — jeg tror kontorchefen er på toilettet.' },
             ],
             timeCost: 8,
         },
@@ -179,21 +190,40 @@ export const DIALOGUE_DATA = {
     toilet: {
         A: {
             lines: [
-                { speaker: 'Kollega', text: '(hviskende) Jeg var lige herude.' },
-                { speaker: 'Dig', text: 'Ja?' },
-                { speaker: 'Kollega', text: 'For at græde lidt.' },
-                { speaker: 'Dig', text: 'Over hvad?' },
-                { speaker: 'Kollega', text: 'Snitfladerne.' },
-            ],
-            timeCost: 9,
-        },
-        B: {
-            lines: [
                 { speaker: 'Kollega', text: 'Jeg tager en hurtig powernap herude.' },
                 { speaker: 'Dig', text: 'På toilettet?' },
                 { speaker: 'Kollega', text: 'Det er det eneste sted uden mødeindkaldelser.' },
             ],
             timeCost: 7,
+        },
+        B: {
+            lines: [
+                { speaker: 'Kollega', text: 'Jeg var lige ude og græde lidt.' },
+                { speaker: 'Dig', text: '...' },
+                { speaker: 'Kollega', text: 'Jeg ved ikke længere, om jeg er i Red Ocean eller Blue Ocean.' },
+            ],
+            timeCost: 10,
+        },
+    },
+
+    minister: {
+        A: {
+            lines: [
+                { speaker: 'Dig', text: 'Undskyld, har du set kontorchefen. Det er en haster.' },
+                { speaker: 'Ministeren', text: 'Hvis det handler om en orientering, så er jeg ikke orienteret.' },
+                { speaker: 'Dig', text: 'Jeg har ikke sagt noget endnu.' },
+                { speaker: 'Ministeren', text: 'Perfekt. Fortsæt med det.' },
+            ],
+            timeCost: 9,
+        },
+        B: {
+            lines: [
+                { speaker: 'Dig', text: 'Undskyld, jeg leder efter kontorchefen.' },
+                { speaker: 'Ministeren', text: 'Jeg tager lige en strategisk pause herinde.' },
+                { speaker: 'Dig', text: 'Fra hvad?' },
+                { speaker: 'Ministeren', text: 'Min særlige rådgiver.' },
+            ],
+            timeCost: 8,
         },
     },
 
@@ -201,8 +231,8 @@ export const DIALOGUE_DATA = {
     chief: {
         A: {
             lines: [
-                { speaker: 'Dig', text: 'Jeg har bedt om feedback på minister-notatet i F2, men du har ikke svaret.' },
-                { speaker: 'Kontorchef', text: 'Nå ja. Vi har rykket det to uger.' },
+                { speaker: 'Dig', text: 'Nå, der var du.' },
+                { speaker: 'Kontorchef', text: 'Ja vi har sgu rykket deadline et par uger.' },
                 { speaker: 'Dig', text: 'Okay.' },
                 { speaker: 'Kontorchef', text: 'Indkalder du ikke til et nyt formøde efter weekenden, så genbesøger vi det der.' },
             ],
@@ -211,11 +241,10 @@ export const DIALOGUE_DATA = {
         },
         B: {
             lines: [
-                { speaker: 'Dig', text: 'Jeg mangler din feedback.' },
-                { speaker: 'Kontorchef', text: 'Ja, den er vigtig.' },
-                { speaker: 'Kontorchef', text: '...Lad os parkere den.' },
-                { speaker: 'Dig', text: 'Til hvornår?' },
-                { speaker: 'Kontorchef', text: 'Til vi har bedre tid.' },
+                { speaker: 'Dig', text: 'Nå, der var du.' },
+                { speaker: 'Kontorchef', text: 'Ja vi har sgu rykket deadline et par uger.' },
+                { speaker: 'Dig', text: '...Seriously?' },
+                { speaker: 'Kontorchef', text: 'Ja. Lad os parkere den til vi har bedre tid.' },
             ],
             timeCost: 0,
             isEnding: true,

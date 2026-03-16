@@ -1,4 +1,4 @@
-import { STATE, CANVAS_WIDTH, CANVAS_HEIGHT, CAMERA_SCALE, INTERACTION_DISTANCE, CHIEF_RELOCATE_TIME, CHIEF_RELOCATE_NPC_COUNT, TIMER_WARNING, TIMER_CRITICAL } from './constants.js';
+import { STATE, CANVAS_WIDTH, CANVAS_HEIGHT, INTERNAL_WIDTH, INTERNAL_HEIGHT, PIXEL_SCALE, INTERACTION_DISTANCE, CHIEF_RELOCATE_TIME, CHIEF_RELOCATE_NPC_COUNT, TIMER_WARNING, TIMER_CRITICAL } from './constants.js';
 import { gridDistance } from './utils.js';
 import { cartToIso } from './utils.js';
 import { Tilemap } from './map/tilemap.js';
@@ -20,17 +20,19 @@ export class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+        this.ctx.imageSmoothingEnabled = false;
+
         this.state = STATE.TITLE;
         this.lastTime = 0;
 
-        // Camera
+        // Camera (uses logical viewport at INTERNAL resolution)
         this.camera = {
             x: 0,
             y: 0,
-            offsetX: CANVAS_WIDTH / 2,
-            offsetY: CANVAS_HEIGHT * 0.45,
-            width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
+            offsetX: INTERNAL_WIDTH / 2,
+            offsetY: INTERNAL_HEIGHT * 0.45,
+            width: INTERNAL_WIDTH,
+            height: INTERNAL_HEIGHT,
         };
 
         // Core systems
@@ -52,10 +54,21 @@ export class Game {
         this.npcs = [];
         this.variantRound = 0; // 0=A, 1=B — alternates between runs
         this.dialoguesCompleted = 0;
+        this.currentDialogueNPC = null;
         this.lastTickSecond = -1;
+        this.chiefSpawned = false;
+
+        // Intro message overlay
+        this.introTimer = 0;
+        this.introDuration = 5000; // 5 seconds total
+        this.introFadeStart = 3500; // start fading at 3.5s
+        this.showIntro = false;
 
         // Pre-calculate elevated objects for z-sorting
         this.elevatedObjects = this.mapRenderer.getElevatedObjects();
+
+        // Attach canvas for touch input
+        this.input.attachCanvas(canvas);
 
         // Start title screen
         this.titleScreen.activate(canvas);
@@ -89,12 +102,19 @@ export class Game {
                 break;
 
             case STATE.PLAYING:
+                if (this.showIntro) {
+                    this.introTimer += dt;
+                    if (this.introTimer >= this.introDuration) {
+                        this.showIntro = false;
+                    }
+                }
                 this.timer.update(dt);
                 this.player.update(dt, this.input, this.tilemap);
                 for (const npc of this.npcs) npc.update(dt, this.tilemap);
                 this.microEvents.update(dt, this.npcs, this.tilemap);
                 this.updateCamera();
                 this.checkNPCCollisions();
+                this.checkChiefSpawn();
                 this.checkTimerTick();
                 if (this.timer.isExpired()) {
                     this.enterState(STATE.FAILURE);
@@ -105,14 +125,18 @@ export class Game {
                 this.timer.update(dt);
                 this.dialogueSystem.update(dt);
                 for (const npc of this.npcs) npc.update(dt, this.tilemap);
-                // Allow space/enter to advance dialogue
-                if (this.input.wasPressed(' ') || this.input.wasPressed('Enter')) {
+                // Allow space/enter/tap to advance dialogue
+                if (this.input.wasPressed(' ') || this.input.wasPressed('Enter') || this.input.wasTapped()) {
                     this.dialogueSystem.skipOrAdvance();
                 }
                 if (this.dialogueSystem.isComplete()) {
                     this.onDialogueComplete();
                 }
                 if (this.timer.isExpired()) {
+                    if (this.currentDialogueNPC) {
+                        this.currentDialogueNPC.inDialogue = false;
+                        this.currentDialogueNPC = null;
+                    }
                     this.dialogueSystem.reset();
                     this.enterState(STATE.FAILURE);
                 }
@@ -138,10 +162,10 @@ export class Game {
 
     render() {
         const ctx = this.ctx;
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        // Dark background
-        ctx.fillStyle = '#1C1810';
+        // Clear canvas
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = '#14100A';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         switch (this.state) {
@@ -151,10 +175,19 @@ export class Game {
 
             case STATE.PLAYING:
             case STATE.DIALOGUE:
+                // Game world renders at 2x zoom (logical viewport = INTERNAL_WIDTH×HEIGHT)
+                ctx.save();
+                ctx.scale(PIXEL_SCALE, PIXEL_SCALE);
                 this.renderGameWorld(ctx);
+                ctx.restore();
+
+                // UI overlays render at native resolution (crisp text)
                 this.hud.render(ctx, this.timer);
                 if (this.state === STATE.DIALOGUE) {
                     this.dialogueRenderer.render(ctx, this.dialogueSystem);
+                }
+                if (this.showIntro) {
+                    this.renderIntroMessage(ctx);
                 }
                 break;
 
@@ -166,28 +199,31 @@ export class Game {
                 this.endScreen.renderFailure(ctx);
                 break;
         }
+
+        // Touch controls render at native resolution
+        if (this.state === STATE.PLAYING || this.state === STATE.DIALOGUE) {
+            this.hud.renderTouchControls(ctx, this.input);
+        }
     }
 
     renderGameWorld(ctx) {
-        // Apply camera zoom
-        ctx.save();
-        ctx.scale(CAMERA_SCALE, CAMERA_SCALE);
-
-        // Create scaled camera for world rendering
-        const scaledCamera = {
-            x: this.camera.x,
-            y: this.camera.y,
-            offsetX: CANVAS_WIDTH / (2 * CAMERA_SCALE),
-            offsetY: (CANVAS_HEIGHT * 0.45) / CAMERA_SCALE,
-            width: CANVAS_WIDTH / CAMERA_SCALE,
-            height: CANVAS_HEIGHT / CAMERA_SCALE,
+        const camera = {
+            x: Math.round(this.camera.x),
+            y: Math.round(this.camera.y),
+            offsetX: INTERNAL_WIDTH / 2,
+            offsetY: Math.round(INTERNAL_HEIGHT * 0.45),
+            width: INTERNAL_WIDTH,
+            height: INTERNAL_HEIGHT,
         };
 
         // Ground pass
-        this.mapRenderer.renderGround(ctx, scaledCamera);
+        this.mapRenderer.renderGround(ctx, camera);
 
         // Warm lighting overlay
-        this.mapRenderer.renderLighting(ctx, scaledCamera);
+        this.mapRenderer.renderLighting(ctx, camera);
+
+        // Wall-mounted signs
+        this.mapRenderer.renderSigns(ctx, camera);
 
         // Build sorted list of all elevated objects + entities
         const drawList = [];
@@ -229,28 +265,31 @@ export class Game {
         for (const item of drawList) {
             switch (item.type) {
                 case 'tile':
-                    this.mapRenderer.renderElevated(ctx, item.col, item.row, item.tile, scaledCamera);
+                    this.mapRenderer.renderElevated(ctx, item.col, item.row, item.tile, camera);
                     break;
                 case 'player':
-                    this.player.render(ctx, scaledCamera);
+                    this.player.render(ctx, camera);
                     break;
                 case 'npc':
-                    item.npc.render(ctx, scaledCamera);
+                    item.npc.render(ctx, camera);
                     break;
             }
         }
 
         // Micro-events overlay (speech bubbles, alerts)
-        this.microEvents.render(ctx, scaledCamera);
-
-        ctx.restore();
+        this.microEvents.render(ctx, camera);
     }
 
     updateCamera() {
-        // Camera follows player smoothly
-        const target = cartToIso(this.player.col, this.player.row);
-        this.camera.x += (target.x - this.camera.x) * 0.08;
-        this.camera.y += (target.y - this.camera.y) * 0.08;
+        // Event-driven camera pan override
+        const panTarget = this.microEvents.getCameraPanTarget();
+        const lerpFactor = panTarget ? 0.04 : 0.08;
+        const col = panTarget ? panTarget.col : this.player.col;
+        const row = panTarget ? panTarget.row : this.player.row;
+
+        const target = cartToIso(col, row);
+        this.camera.x += (target.x - this.camera.x) * lerpFactor;
+        this.camera.y += (target.y - this.camera.y) * lerpFactor;
     }
 
     checkNPCCollisions() {
@@ -266,29 +305,35 @@ export class Game {
     }
 
     startDialogue(npc) {
-        const variant = this.variantRound === 0 ? 'A' : 'B';
-        const started = this.dialogueSystem.start(npc.type, variant);
+        const variant = Math.random() < 0.5 ? 'A' : 'B';
+        const isFirst = this.dialoguesCompleted === 0;
+        const started = this.dialogueSystem.start(npc.type, variant, isFirst);
         if (started) {
             npc.hasInteracted = true;
+            npc.inDialogue = true;
+            this.currentDialogueNPC = npc;
             this.state = STATE.DIALOGUE;
             this.dialoguesCompleted++;
-
-            // Check if chief should relocate
-            if (!this.npcSpawner.chiefHasRelocated) {
-                const timeElapsed = (239 * 1000 - this.timer.remaining) / 1000;
-                if (this.dialoguesCompleted >= CHIEF_RELOCATE_NPC_COUNT || timeElapsed >= CHIEF_RELOCATE_TIME) {
-                    this.npcSpawner.relocateChief();
-                }
-            }
+            this.audio.playDialogueStart();
         }
     }
 
     onDialogueComplete() {
         const timeCost = this.dialogueSystem.getTimeCost();
+        const timeBonus = this.dialogueSystem.getTimeBonus();
         const isEnding = this.dialogueSystem.isEnding;
 
         if (timeCost > 0) {
             this.timer.deduct(timeCost);
+        }
+        if (timeBonus > 0) {
+            this.timer.add(timeBonus);
+        }
+
+        // Release NPC from dialogue freeze
+        if (this.currentDialogueNPC) {
+            this.currentDialogueNPC.inDialogue = false;
+            this.currentDialogueNPC = null;
         }
 
         this.dialogueSystem.reset();
@@ -300,13 +345,23 @@ export class Game {
         }
     }
 
+    checkChiefSpawn() {
+        // Spawn the chief in the final 30-45 seconds
+        if (!this.chiefSpawned && this.timer.getSeconds() <= this.chiefSpawnThreshold) {
+            this.chiefSpawned = true;
+            this.npcSpawner.spawnChief();
+        }
+    }
+
     checkTimerTick() {
         const sec = this.timer.getSeconds();
         if (sec !== this.lastTickSecond && sec <= 60) {
             this.lastTickSecond = sec;
-            if (sec <= 30) {
+            if (sec <= 10) {
                 this.audio.playTick();
-            } else if (sec % 2 === 0) {
+            } else if (sec <= 30 && sec % 2 === 0) {
+                this.audio.playTick();
+            } else if (sec % 5 === 0) {
                 this.audio.playTick();
             }
         }
@@ -320,14 +375,21 @@ export class Game {
         this.audio.resume();
         this.audio.startAmbience();
 
+        // Connect audio and player to micro-events
+        this.microEvents.setAudio(this.audio);
+
         // Create player
         this.player = new Player(PLAYER_START.col, PLAYER_START.row, hairStyle);
+        this.microEvents.setPlayer(this.player);
 
         // Spawn NPCs
         this.npcs = this.npcSpawner.spawn(this.variantRound);
 
         // Reset state
         this.dialoguesCompleted = 0;
+        this.currentDialogueNPC = null;
+        this.chiefSpawned = false;
+        this.chiefSpawnThreshold = 30 + Math.floor(Math.random() * 16); // 30-45 seconds remaining
         this.lastTickSecond = -1;
         this.timer.start();
         this.dialogueSystem.reset();
@@ -337,7 +399,51 @@ export class Game {
         this.camera.x = target.x;
         this.camera.y = target.y;
 
+        this.showIntro = true;
+        this.introTimer = 0;
         this.state = STATE.PLAYING;
+    }
+
+    renderIntroMessage(ctx) {
+        let alpha = 1;
+        if (this.introTimer > this.introFadeStart) {
+            alpha = 1 - (this.introTimer - this.introFadeStart) / (this.introDuration - this.introFadeStart);
+        }
+        if (this.introTimer < 400) {
+            alpha = Math.min(alpha, this.introTimer / 400);
+        }
+
+        // Dark overlay (renders at native resolution)
+        ctx.fillStyle = `rgba(10, 8, 6, ${0.7 * alpha})`;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const cy = CANVAS_HEIGHT / 2;
+        const cx = CANVAS_WIDTH / 2;
+
+        // Background box
+        ctx.fillStyle = `rgba(30, 26, 20, ${0.85})`;
+        ctx.fillRect(cx - 220, cy - 50, 440, 110);
+        ctx.strokeStyle = `rgba(200, 168, 130, 0.4)`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx - 220, cy - 50, 440, 110);
+
+        // Main message
+        ctx.font = 'bold 24px "Courier New", monospace';
+        ctx.fillStyle = '#F5E6C8';
+        ctx.fillText('Find din kontorchef', cx, cy - 16);
+        ctx.fillText('inden børnehaven lukker', cx, cy + 16);
+
+        // Timer hint
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillStyle = '#A89070';
+        ctx.fillText('Du har 2 minutter og 59 sekunder', cx, cy + 46);
+
+        ctx.restore();
     }
 
     enterState(newState) {

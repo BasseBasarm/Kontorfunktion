@@ -1,109 +1,110 @@
-// Muted corporate color palette — Habbo-style with Danish ministry tones
+// Vibrant pixel-art office palette — inspired by Pixel Agent Desk
+// Warm, saturated, cozy office feel with rich wood and green accents
 export const PALETTE = {
-    // Walls & Structure (Habbo-style thick outlines)
-    WALL_TOP: '#D4CFC8',
-    WALL_FRONT: '#B8B0A6',
-    WALL_SIDE: '#A09888',
-    WALL_OUTLINE: '#5C554C',
-    WALL_ACCENT: '#D4C8A0', // Warm yellow-beige like Danish ministry walls
+    // Walls & Structure — warm cream/beige, not grey
+    WALL_TOP: '#E8DCC8',
+    WALL_FRONT: '#C8B898',
+    WALL_SIDE: '#A89878',
+    WALL_OUTLINE: '#3C3020',
+    WALL_ACCENT: '#D4B860', // Warm gold stripe
 
-    // Floor tiles
-    FLOOR_LIGHT: '#E8E0D4',
-    FLOOR_DARK: '#DED6CA',
-    FLOOR_CORRIDOR: '#D0C8BC',
-    FLOOR_KITCHEN: '#C8C4BC',
-    FLOOR_MEETING: '#D8D4CC',
-    FLOOR_RESTROOM: '#D0D0D0',
-    FLOOR_MINISTER: '#C8B8A0',
+    // Floor tiles — warm, distinct per room
+    FLOOR_LIGHT: '#E8D8B8',
+    FLOOR_DARK: '#D8C8A4',
+    FLOOR_CORRIDOR: '#D0C4A8',
+    FLOOR_KITCHEN: '#E0D4BC',
+    FLOOR_MEETING: '#C8BCA0',
+    FLOOR_RESTROOM: '#D8D4CC',
+    FLOOR_MINISTER: '#C8A870',
 
-    // Furniture
-    DESK_TOP: '#B0A898',
-    DESK_FRONT: '#988868',
-    DESK_SIDE: '#887858',
-    MONITOR_FRAME: '#383838',
-    MONITOR_SCREEN: '#4A8C5C', // Green screen like the ministry photo
-    MONITOR_GLOW: '#5CA870',
-    LAMP_BASE: '#2C2C2C',
-    LAMP_HEAD: '#404040',
-    LAMP_LIGHT: '#F0E8D0',
-    CHAIR_SEAT: '#4A6080',
-    CHAIR_BACK: '#3A5070',
-    CHAIR_LEGS: '#606060',
+    // Furniture — rich warm wood (walnut/mahogany)
+    DESK_TOP: '#9A7048',
+    DESK_FRONT: '#7B4E2C',
+    DESK_SIDE: '#6A3E20',
+    MONITOR_FRAME: '#222222',
+    MONITOR_SCREEN: '#48B8E8', // Modern blue-white LCD
+    MONITOR_GLOW: '#88D0F0',
+    LAMP_BASE: '#1C1C1C',
+    LAMP_HEAD: '#303030',
+    LAMP_LIGHT: '#F8F0D0',
+    CHAIR_SEAT: '#4CA860',   // Green like reference
+    CHAIR_BACK: '#3C8850',
+    CHAIR_LEGS: '#404040',
 
-    // Meeting room
-    MEETING_TABLE: '#8B7355',
-    GLASS_WALL: 'rgba(180, 200, 220, 0.4)',
-    GLASS_FRAME: '#8090A0',
-    WHITEBOARD: '#F0F0F0',
-    WHITEBOARD_FRAME: '#A0A0A0',
+    // Meeting room — rich wood, cleaner glass
+    MEETING_TABLE: '#8B6838',
+    GLASS_WALL: 'rgba(140, 200, 255, 0.3)',
+    GLASS_FRAME: '#5080A0',
+    WHITEBOARD: '#F8F8F4',
+    WHITEBOARD_FRAME: '#707070',
 
-    // Kitchen
-    COFFEE_MACHINE: '#3C3C3C',
-    COFFEE_ACCENT: '#8C4420',
-    COUNTER_TOP: '#C8C0B0',
-    FRIDGE: '#E0E0E0',
+    // Kitchen — warm, inviting
+    COFFEE_MACHINE: '#282828',
+    COFFEE_ACCENT: '#B85820',
+    COUNTER_TOP: '#C8B898',
+    FRIDGE: '#E8E8E4',
 
-    // Plants
-    PLANT_POT: '#8B6040',
-    PLANT_LEAVES: '#5A8040',
-    PLANT_DARK: '#3A6020',
+    // Plants — lush, vibrant green
+    PLANT_POT: '#906030',
+    PLANT_LEAVES: '#50A840',
+    PLANT_DARK: '#308820',
 
     // Danish flag
     FLAG_RED: '#C8102E',
     FLAG_WHITE: '#FFFFFF',
-    FLAG_POLE: '#A09080',
+    FLAG_POLE: '#908070',
 
-    // Characters — skin tones
-    SKIN_LIGHT: '#F0D0B0',
-    SKIN_MEDIUM: '#D4A878',
-    SKIN_TAN: '#C09060',
-    SKIN_BROWN: '#8B6840',
-    SKIN_DARK: '#6B4830',
+    // Characters — skin tones (warm)
+    SKIN_LIGHT: '#F0C8A0',
+    SKIN_MEDIUM: '#D09868',
+    SKIN_TAN: '#B88050',
+    SKIN_BROWN: '#886038',
+    SKIN_DARK: '#604028',
 
     // Characters — hair
-    HAIR_BLONDE: '#D4B870',
-    HAIR_LIGHT_BROWN: '#9C7848',
-    HAIR_BROWN: '#685840',
-    HAIR_DARK: '#2C2420',
-    HAIR_RED: '#A04020',
-    HAIR_GREY: '#909090',
-    HAIR_BLACK: '#1C1810',
+    HAIR_BLONDE: '#E0B850',
+    HAIR_LIGHT_BROWN: '#907040',
+    HAIR_BROWN: '#584030',
+    HAIR_DARK: '#201810',
+    HAIR_RED: '#B83818',
+    HAIR_GREY: '#808080',
+    HAIR_BLACK: '#181410',
 
-    // Characters — clothing (corporate)
-    SHIRT_WHITE: '#E8E4E0',
-    SHIRT_BLUE: '#6888A8',
-    SHIRT_LIGHTBLUE: '#88A8C8',
-    SHIRT_GREY: '#A0A0A0',
-    SHIRT_PINK: '#C8A0A8',
-    SHIRT_GREEN: '#7CA080',
-    PANTS_DARK: '#383838',
-    PANTS_NAVY: '#2C3448',
-    PANTS_GREY: '#686868',
-    PANTS_KHAKI: '#A89878',
-    SKIRT_DARK: '#383838',
-    SKIRT_NAVY: '#2C3448',
-    SHOES_DARK: '#2C2420',
-    SHOES_BROWN: '#604830',
+    // Characters — clothing (vibrant corporate)
+    SHIRT_WHITE: '#F4F0EC',
+    SHIRT_BLUE: '#4878B8',
+    SHIRT_LIGHTBLUE: '#68A0D0',
+    SHIRT_GREY: '#888888',
+    SHIRT_PINK: '#D08898',
+    SHIRT_GREEN: '#508870',
+    PANTS_DARK: '#2C2C2C',
+    PANTS_NAVY: '#1C2840',
+    PANTS_GREY: '#505050',
+    PANTS_KHAKI: '#A89060',
+    SKIRT_DARK: '#2C2C2C',
+    SKIRT_NAVY: '#1C2840',
+    SHOES_DARK: '#1C1410',
+    SHOES_BROWN: '#503820',
 
-    // UI
-    UI_BG: '#2C2824',
-    UI_BG_LIGHT: '#3C3834',
-    UI_TEXT: '#E8E0D8',
-    UI_TEXT_DIM: '#A09888',
-    UI_ACCENT: '#B04040',
-    UI_ACCENT_WARM: '#C87040',
-    DIALOGUE_BG: '#F5F0EA',
-    DIALOGUE_BORDER: '#8C8070',
-    DIALOGUE_TEXT: '#2C2824',
-    DIALOGUE_SPEAKER: '#4A6080',
-    TIMER_NORMAL: '#E8E0D8',
-    TIMER_WARNING: '#C87040',
-    TIMER_CRITICAL: '#B04040',
+    // UI — warm, clean
+    UI_BG: '#1C1810',
+    UI_BG_LIGHT: '#302820',
+    UI_TEXT: '#F0E8D8',
+    UI_TEXT_DIM: '#988870',
+    UI_ACCENT: '#C03030',
+    UI_ACCENT_WARM: '#D86830',
+    DIALOGUE_BG: '#FBF8F0',
+    DIALOGUE_BORDER: '#786858',
+    DIALOGUE_TEXT: '#1C1810',
+    DIALOGUE_SPEAKER: '#3070A8',
+    TIMER_NORMAL: '#F0E8D8',
+    TIMER_WARNING: '#D86830',
+    TIMER_CRITICAL: '#C03030',
 
-    // Misc
-    PAPER_WHITE: '#F5F0E8',
-    PRINTER_BODY: '#D8D8D8',
-    PRINTER_DARK: '#A0A0A0',
-    BOOKSHELF: '#8B6B40',
-    BOOK_COLORS: ['#6888A8', '#B04040', '#5A8040', '#C87040', '#8868A8'],
+    // Misc — richer
+    PAPER_WHITE: '#FAF6EC',
+    PRINTER_BODY: '#DCDCD8',
+    PRINTER_DARK: '#888888',
+    BOOKSHELF: '#8B5C2C',
+    BOOK_COLORS: ['#4878B8', '#C83030', '#50A840', '#D86830', '#8860B0'],
 };

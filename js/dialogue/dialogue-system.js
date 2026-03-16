@@ -14,15 +14,25 @@ export class DialogueSystem {
         this.npcId = null;
     }
 
-    start(npcType, variant) {
+    start(npcType, variant, isFirstEncounter) {
         const data = DIALOGUE_DATA[npcType];
         if (!data) return false;
 
         const variantData = data[variant];
         if (!variantData) return false;
 
-        this.currentDialogue = variantData.lines;
+        // Prepend player introduction only on the very first coworker encounter
+        let lines = variantData.lines;
+        if (isFirstEncounter && npcType !== 'chief') {
+            lines = [
+                { speaker: 'Dig', text: 'Jeg har en skarp deadline og mangler feedback på et notat i F2.' },
+                ...lines,
+            ];
+        }
+
+        this.currentDialogue = lines;
         this.timeCost = variantData.timeCost;
+        this.timeBonus = variantData.timeBonus || 0;
         this.isEnding = !!variantData.isEnding;
         this.lineIndex = 0;
         this.charIndex = 0;
@@ -103,12 +113,17 @@ export class DialogueSystem {
         return this.timeCost;
     }
 
+    getTimeBonus() {
+        return this.timeBonus;
+    }
+
     reset() {
         this.state = 'IDLE';
         this.currentDialogue = null;
         this.lineIndex = 0;
         this.charIndex = 0;
         this.isEnding = false;
+        this.timeBonus = 0;
         this.npcId = null;
     }
 }

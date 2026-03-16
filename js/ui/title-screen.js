@@ -1,9 +1,15 @@
 import { PALETTE as P } from '../graphics/palette.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../constants.js';
 
+// Djøf brand blue palette
+const DJOEF_BLUE = '#003A6E';
+const DJOEF_BLUE_LIGHT = '#1B5A96';
+const DJOEF_BLUE_DARK = '#002244';
+const DJOEF_BLUE_ACCENT = '#2070B0';
+
 export class TitleScreen {
     constructor() {
-        this.selectedHairStyle = 'short'; // Default
+        this.selectedHairStyle = 'short';
         this.hoveredButton = null;
         this.ready = false;
         this.fadeIn = 0;
@@ -11,6 +17,7 @@ export class TitleScreen {
         this._onClick = this._onClick.bind(this);
         this._onMouseMove = this._onMouseMove.bind(this);
         this._onKeyDown = this._onKeyDown.bind(this);
+        this._onTouchStart = this._onTouchStart.bind(this);
     }
 
     activate(canvas) {
@@ -19,6 +26,7 @@ export class TitleScreen {
         this.fadeIn = 0;
         canvas.addEventListener('click', this._onClick);
         canvas.addEventListener('mousemove', this._onMouseMove);
+        canvas.addEventListener('touchstart', this._onTouchStart, { passive: false });
         window.addEventListener('keydown', this._onKeyDown);
     }
 
@@ -27,6 +35,7 @@ export class TitleScreen {
         if (this.canvas) {
             this.canvas.removeEventListener('click', this._onClick);
             this.canvas.removeEventListener('mousemove', this._onMouseMove);
+            this.canvas.removeEventListener('touchstart', this._onTouchStart);
         }
     }
 
@@ -65,8 +74,29 @@ export class TitleScreen {
         }
     }
 
+    _onTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = CANVAS_WIDTH / rect.width;
+        const scaleY = CANVAS_HEIGHT / rect.height;
+        const mx = (touch.clientX - rect.left) * scaleX;
+        const my = (touch.clientY - rect.top) * scaleY;
+        const btns = this._getButtonRects();
+
+        if (this._inRect(mx, my, btns.bald)) {
+            this.selectedHairStyle = 'bald';
+        } else if (this._inRect(mx, my, btns.short)) {
+            this.selectedHairStyle = 'short';
+        } else if (this._inRect(mx, my, btns.long)) {
+            this.selectedHairStyle = 'long';
+        } else if (this._inRect(mx, my, btns.start)) {
+            this.ready = true;
+        }
+    }
+
     _onKeyDown(e) {
-        if (this.fadeIn < 0.5) return; // Don't accept input during fade-in
+        if (this.fadeIn < 0.5) return;
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             this.ready = true;
@@ -110,54 +140,61 @@ export class TitleScreen {
     render(ctx) {
         ctx.globalAlpha = this.fadeIn;
 
-        // Background
-        ctx.fillStyle = '#2C2824';
+        // Djøf blue background — lighter, more professional/bureaucratic
+        ctx.fillStyle = DJOEF_BLUE;
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        // Subtle pattern
+        // Subtle lighter stripe pattern (bureaucratic paper feel)
         ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-        for (let i = 0; i < CANVAS_WIDTH; i += 8) {
-            for (let j = 0; j < CANVAS_HEIGHT; j += 8) {
-                if ((i + j) % 16 === 0) {
-                    ctx.fillRect(i, j, 4, 4);
+        for (let y = 0; y < CANVAS_HEIGHT; y += 4) {
+            if (y % 8 === 0) {
+                ctx.fillRect(0, y, CANVAS_WIDTH, 2);
+            }
+        }
+
+        // Subtle diamond grid overlay
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+        for (let i = 0; i < CANVAS_WIDTH; i += 16) {
+            for (let j = 0; j < CANVAS_HEIGHT; j += 16) {
+                if ((i + j) % 32 === 0) {
+                    ctx.fillRect(i, j, 8, 8);
                 }
             }
         }
 
         const cx = CANVAS_WIDTH / 2;
 
-        // Draw Danish government crown
+        // Light horizontal rule at top
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, 3);
+
+        // Draw Christiansborg-inspired crown/building icon
         this.drawCrown(ctx, cx, 140);
 
-        // Title
+        // Title — white on blue
         ctx.font = 'bold 28px "Courier New", monospace';
-        ctx.fillStyle = P.UI_TEXT;
+        ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('KONTORFUNKTIONÆR', cx, 220);
         ctx.fillText('SIMULATOR', cx, 252);
 
-        // Subtitle
+        // Subtitle — soft light blue
         ctx.font = '13px "Courier New", monospace';
-        ctx.fillStyle = P.UI_TEXT_DIM;
+        ctx.fillStyle = 'rgba(200, 220, 240, 0.7)';
         ctx.fillText('Find chefen. Få notat-feedback. Inden børnehaven lukker.', cx, 290);
 
-        // Divider
-        ctx.strokeStyle = 'rgba(160, 152, 136, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx - 140, 320);
-        ctx.lineTo(cx + 140, 320);
-        ctx.stroke();
+        // Divider — light blue
+        ctx.fillStyle = 'rgba(100, 160, 220, 0.3)';
+        ctx.fillRect(cx - 140, 320, 280, 1);
 
         // Hairstyle selection label
         ctx.font = '12px "Courier New", monospace';
-        ctx.fillStyle = P.UI_TEXT_DIM;
+        ctx.fillStyle = 'rgba(200, 220, 240, 0.6)';
         ctx.fillText('Vælg frisure', cx, 348);
 
         // Hairstyle buttons
         const btns = this._getButtonRects();
-
         this.drawButton(ctx, btns.bald, 'Skaldet', this.selectedHairStyle === 'bald', this.hoveredButton === 'bald');
         this.drawButton(ctx, btns.short, 'Kort hår', this.selectedHairStyle === 'short', this.hoveredButton === 'short');
         this.drawButton(ctx, btns.long, 'Langt hår', this.selectedHairStyle === 'long', this.hoveredButton === 'long');
@@ -167,8 +204,8 @@ export class TitleScreen {
 
         // Bottom text
         ctx.font = '10px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(160, 152, 136, 0.4)';
-        ctx.fillText('WASD eller piletaster for at bevæge dig', cx, 520);
+        ctx.fillStyle = 'rgba(180, 200, 220, 0.35)';
+        ctx.fillText('WASD / piletaster / touch for at bevæge dig', cx, 520);
         ctx.fillText('Centraladministrationen', cx, 540);
 
         ctx.globalAlpha = 1;
@@ -177,239 +214,138 @@ export class TitleScreen {
     drawButton(ctx, rect, label, selected, hovered, isStart) {
         const { x, y, w, h } = rect;
 
+        // Shadow
+        if (isStart || selected) {
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(x + 1, y + 2, w, h);
+        }
+
         // Background
         if (isStart) {
-            ctx.fillStyle = hovered ? '#5A7090' : '#4A6080';
+            ctx.fillStyle = hovered ? '#E8C040' : '#D0A830';
         } else if (selected) {
-            ctx.fillStyle = '#4A6080';
+            ctx.fillStyle = hovered ? DJOEF_BLUE_ACCENT : DJOEF_BLUE_LIGHT;
         } else {
-            ctx.fillStyle = hovered ? '#4C4840' : '#3C3834';
+            ctx.fillStyle = hovered ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)';
         }
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, 4);
-        ctx.fill();
+        ctx.fillRect(x, y, w, h);
 
         // Border
-        ctx.strokeStyle = selected ? '#6888A8' : 'rgba(160, 152, 136, 0.3)';
-        ctx.lineWidth = selected ? 2 : 1;
-        ctx.stroke();
+        if (isStart) {
+            ctx.strokeStyle = '#F0D050';
+            ctx.lineWidth = 2;
+        } else if (selected) {
+            ctx.strokeStyle = DJOEF_BLUE_ACCENT;
+            ctx.lineWidth = 2;
+        } else {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+        }
+        ctx.strokeRect(x, y, w, h);
+
+        // Top highlight
+        if (isStart || selected) {
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.fillRect(x + 2, y + 1, w - 4, 1);
+        }
 
         // Label
         ctx.font = isStart ? 'bold 16px "Courier New", monospace' : '13px "Courier New", monospace';
-        ctx.fillStyle = selected || isStart ? P.UI_TEXT : P.UI_TEXT_DIM;
+        ctx.fillStyle = isStart ? DJOEF_BLUE_DARK : (selected ? '#FFFFFF' : 'rgba(200, 220, 240, 0.7)');
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, x + w / 2, y + h / 2);
     }
 
-    // Draw the Danish government crown (rigsvåben) — grand royal style
+    // Pixel-art Christiansborg-inspired crown
     drawCrown(ctx, cx, cy) {
         ctx.save();
-        ctx.translate(cx, cy);
 
-        const gold = '#C8A85C';
-        const goldDark = '#8A7038';
-        const goldLight = '#E8D088';
-        const goldBright = '#F0E0A0';
+        const gold = '#D4B860';
+        const goldDark = '#A08030';
+        const goldLight = '#F0E090';
         const velvet = '#6040A0';
-        const velvetDark = '#483078';
         const jewel = '#D04040';
-        const jewelBlue = '#4060C0';
+        const jewelBlue = '#4090E0';
 
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        const bx = Math.round(cx - 36);
+        const by = Math.round(cy);
 
-        // Velvet cap (visible between arches)
+        // Velvet cap
         ctx.fillStyle = velvet;
-        ctx.beginPath();
-        ctx.ellipse(0, -8, 28, 28, 0, Math.PI * 1.1, Math.PI * 1.9);
-        ctx.quadraticCurveTo(0, -38, -28, -8);
-        ctx.fill();
+        ctx.fillRect(bx + 6, by - 30, 60, 30);
+        ctx.fillRect(bx + 12, by - 36, 48, 6);
+        ctx.fillRect(bx + 18, by - 42, 36, 6);
 
-        // Crown arches — 5 grand arches with gold fill
+        // Five prongs
         ctx.fillStyle = gold;
-        ctx.strokeStyle = goldDark;
-        ctx.lineWidth = 1.5;
+        // Left outer
+        ctx.fillRect(bx, by - 12, 6, 12);
+        ctx.fillRect(bx, by - 24, 6, 12);
+        ctx.fillRect(bx + 2, by - 30, 6, 6);
+        // Left inner
+        ctx.fillRect(bx + 16, by - 18, 6, 18);
+        ctx.fillRect(bx + 16, by - 36, 6, 18);
+        ctx.fillRect(bx + 18, by - 42, 6, 6);
+        // Center (tallest)
+        ctx.fillRect(bx + 30, by - 24, 12, 24);
+        ctx.fillRect(bx + 32, by - 48, 8, 24);
+        ctx.fillRect(bx + 34, by - 54, 4, 6);
+        // Right inner
+        ctx.fillRect(bx + 50, by - 18, 6, 18);
+        ctx.fillRect(bx + 50, by - 36, 6, 18);
+        ctx.fillRect(bx + 48, by - 42, 6, 6);
+        // Right outer
+        ctx.fillRect(bx + 66, by - 12, 6, 12);
+        ctx.fillRect(bx + 66, by - 24, 6, 12);
+        ctx.fillRect(bx + 64, by - 30, 6, 6);
 
-        // Left outer arch
-        ctx.beginPath();
-        ctx.moveTo(-32, 14);
-        ctx.quadraticCurveTo(-36, -10, -22, -24);
-        ctx.lineTo(-18, -22);
-        ctx.quadraticCurveTo(-30, -8, -26, 14);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Left inner arch
-        ctx.beginPath();
-        ctx.moveTo(-20, 12);
-        ctx.quadraticCurveTo(-22, -14, -10, -32);
-        ctx.lineTo(-6, -30);
-        ctx.quadraticCurveTo(-16, -12, -14, 12);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Center arch (tallest)
-        ctx.beginPath();
-        ctx.moveTo(-6, 10);
-        ctx.quadraticCurveTo(-6, -22, 0, -40);
-        ctx.quadraticCurveTo(6, -22, 6, 10);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Right inner arch
-        ctx.beginPath();
-        ctx.moveTo(14, 12);
-        ctx.quadraticCurveTo(16, -12, 6, -30);
-        ctx.lineTo(10, -32);
-        ctx.quadraticCurveTo(22, -14, 20, 12);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Right outer arch
-        ctx.beginPath();
-        ctx.moveTo(26, 14);
-        ctx.quadraticCurveTo(30, -8, 18, -22);
-        ctx.lineTo(22, -24);
-        ctx.quadraticCurveTo(36, -10, 32, 14);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Highlight on arches (gold shimmer)
-        ctx.strokeStyle = goldLight;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(-29, 6);
-        ctx.quadraticCurveTo(-32, -6, -20, -18);
-        ctx.moveTo(-17, 4);
-        ctx.quadraticCurveTo(-19, -8, -8, -26);
-        ctx.moveTo(-3, 2);
-        ctx.quadraticCurveTo(-3, -16, 0, -34);
-        ctx.moveTo(17, 4);
-        ctx.quadraticCurveTo(19, -8, 8, -26);
-        ctx.moveTo(29, 6);
-        ctx.quadraticCurveTo(32, -6, 20, -18);
-        ctx.stroke();
-
-        // Crown base band (rim)
-        ctx.fillStyle = gold;
-        ctx.beginPath();
-        ctx.ellipse(0, 18, 36, 10, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = goldDark;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Band detail — inner highlight
+        // Highlights
         ctx.fillStyle = goldLight;
-        ctx.beginPath();
-        ctx.ellipse(0, 16, 34, 6, 0, Math.PI, 0);
-        ctx.fill();
+        ctx.fillRect(bx + 2, by - 28, 2, 4);
+        ctx.fillRect(bx + 18, by - 40, 2, 4);
+        ctx.fillRect(bx + 34, by - 52, 4, 4);
+        ctx.fillRect(bx + 52, by - 40, 2, 4);
+        ctx.fillRect(bx + 68, by - 28, 2, 4);
 
-        // Band decoration — alternating jewels
-        const bandJewels = [
-            { x: -24, y: 15, c: jewel },
-            { x: -12, y: 12, c: jewelBlue },
-            { x: 0, y: 11, c: jewel },
-            { x: 12, y: 12, c: jewelBlue },
-            { x: 24, y: 15, c: jewel },
-        ];
-        for (const j of bandJewels) {
-            // Jewel setting (gold border)
-            ctx.fillStyle = goldDark;
-            ctx.beginPath();
-            ctx.ellipse(j.x, j.y, 4, 3, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Jewel
-            ctx.fillStyle = j.c;
-            ctx.beginPath();
-            ctx.ellipse(j.x, j.y, 3, 2.2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Jewel highlight
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.beginPath();
-            ctx.ellipse(j.x - 0.5, j.y - 0.8, 1.5, 1, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        // Tips
+        ctx.fillStyle = '#F0E0A0';
+        ctx.fillRect(bx + 2, by - 30, 4, 2);
+        ctx.fillRect(bx + 18, by - 42, 4, 2);
+        ctx.fillRect(bx + 34, by - 54, 4, 2);
+        ctx.fillRect(bx + 50, by - 42, 4, 2);
+        ctx.fillRect(bx + 66, by - 30, 4, 2);
 
-        // Crown tips — fleur-de-lis style balls
-        ctx.fillStyle = goldBright;
-        const tips = [
-            { x: -20, y: -24 },
-            { x: -8, y: -32 },
-            { x: 0, y: -41 },
-            { x: 8, y: -32 },
-            { x: 20, y: -24 },
-        ];
-        for (const tip of tips) {
-            // Larger ornamental ball
-            ctx.fillStyle = gold;
-            ctx.beginPath();
-            ctx.arc(tip.x, tip.y, 4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = goldDark;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            // Highlight
-            ctx.fillStyle = goldBright;
-            ctx.beginPath();
-            ctx.arc(tip.x - 1, tip.y - 1, 1.5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Orb and cross on top (Reichsapfel)
-        // Orb
+        // Base band
         ctx.fillStyle = gold;
-        ctx.beginPath();
-        ctx.arc(0, -42, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = goldDark;
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-        // Orb band
-        ctx.strokeStyle = goldDark;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.ellipse(0, -42, 5, 2, 0, 0, Math.PI * 2);
-        ctx.stroke();
-        // Orb highlight
-        ctx.fillStyle = goldBright;
-        ctx.beginPath();
-        ctx.arc(-1.5, -43.5, 2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillRect(bx - 2, by, 76, 10);
+        ctx.fillStyle = goldLight;
+        ctx.fillRect(bx, by, 72, 4);
+        ctx.fillStyle = goldDark;
+        ctx.fillRect(bx - 2, by + 8, 76, 2);
 
-        // Cross on orb
-        ctx.strokeStyle = goldLight;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(0, -47);
-        ctx.lineTo(0, -56);
-        ctx.moveTo(-5, -52);
-        ctx.lineTo(5, -52);
-        ctx.stroke();
-        // Cross outline
-        ctx.strokeStyle = goldDark;
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(0, -47);
-        ctx.lineTo(0, -56);
-        ctx.moveTo(-5, -52);
-        ctx.lineTo(5, -52);
-        ctx.stroke();
+        // Jewels
+        ctx.fillStyle = jewel;
+        ctx.fillRect(bx + 6, by + 2, 6, 4);
+        ctx.fillStyle = jewelBlue;
+        ctx.fillRect(bx + 20, by + 2, 6, 4);
+        ctx.fillStyle = jewel;
+        ctx.fillRect(bx + 34, by + 2, 6, 4);
+        ctx.fillStyle = jewelBlue;
+        ctx.fillRect(bx + 46, by + 2, 6, 4);
+        ctx.fillStyle = jewel;
+        ctx.fillRect(bx + 60, by + 2, 6, 4);
+
+        // Cross on top
+        ctx.fillStyle = goldLight;
+        ctx.fillRect(bx + 34, by - 66, 4, 12);
+        ctx.fillRect(bx + 28, by - 62, 16, 4);
+        ctx.fillStyle = goldDark;
+        ctx.fillRect(bx + 32, by - 66, 2, 2);
 
         ctx.restore();
     }
 
-    isReady() {
-        return this.ready;
-    }
-
-    getHairStyle() {
-        return this.selectedHairStyle;
-    }
+    isReady() { return this.ready; }
+    getHairStyle() { return this.selectedHairStyle; }
 }

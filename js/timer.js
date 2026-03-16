@@ -25,6 +25,10 @@ export class Timer {
         if (this.remaining < 0) this.remaining = 0;
     }
 
+    add(seconds) {
+        this.remaining += seconds * 1000;
+    }
+
     isExpired() {
         return this.remaining <= 0;
     }
