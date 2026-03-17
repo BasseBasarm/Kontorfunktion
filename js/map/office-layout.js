@@ -86,11 +86,12 @@ export const NPC_POSITIONS = [
 
 // Chief possible spawn locations
 export const CHIEF_SPAWNS = [
-    { col: 3, row: 3 },   // Minister area
-    { col: 17, row: 3 },  // Senior office
-    { col: 5, row: 9 },   // Meeting room interior
-    { col: 18, row: 6 },  // Far east corridor
-    { col: 10, row: 12 }, // Lower open area
+    { col: 10, row: 5 },  // Main corridor center
+    { col: 5, row: 5 },   // Corridor near printer
+    { col: 14, row: 10 }, // Open office floor (east)
+    { col: 8, row: 12 },  // Lower open area (west)
+    { col: 4, row: 15 },  // Kitchen area
+    { col: 15, row: 12 }, // Open floor (south-east)
 ];
 
 // Player start position (center of open office, clear of desk NPCs)
