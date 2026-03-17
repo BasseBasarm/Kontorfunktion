@@ -198,11 +198,12 @@ export const DIALOGUE_DATA = {
         },
         B: {
             lines: [
-                { speaker: 'Kollega', text: 'Jeg var lige ude og græde lidt.' },
-                { speaker: 'Dig', text: '...' },
-                { speaker: 'Kollega', text: 'Jeg ved ikke længere, om jeg er i Red Ocean eller Blue Ocean.' },
+                { speaker: 'Kollega (hviskende)', text: 'Jeg var lige herude for at græde lidt.' },
+                { speaker: 'Dig', text: 'Hvorfor?' },
+                { speaker: 'Kollega', text: 'Fordi jeg ikke ved om jeg er i Red Ocean eller Blue Ocean.' },
             ],
-            timeCost: 10,
+            timeCost: 0,
+            timeBonus: 9,
         },
     },
 
