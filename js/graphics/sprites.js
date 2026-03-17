@@ -18,7 +18,7 @@ const DISPLAY_CX = Math.round(SPRITE_CX * SPRITE_DISPLAY_SCALE);
 const DISPLAY_CY = Math.round(SPRITE_CY * SPRITE_DISPLAY_SCALE);
 
 function _configKey(config, pose) {
-    return `${config.skinTone}|${config.hairColor}|${config.hairStyle}|${config.shirtColor}|${config.pantsColor}|${config.gender || 'male'}|${config.isChief ? 1 : 0}|${config.hasGlasses ? 1 : 0}|${config.beard || 'none'}|${pose}`;
+    return `${config.skinTone}|${config.hairColor}|${config.hairStyle}|${config.shirtColor}|${config.pantsColor}|${config.gender || 'male'}|${config.isChief ? 1 : 0}|${config.hasGlasses ? 1 : 0}|${config.beard || 'none'}|${config.hasSkirt ? 1 : 0}|${pose}`;
 }
 
 // Get or create a cached sprite
@@ -65,6 +65,7 @@ function _drawCharacterDirect(ctx, cx, bottomY, config, pose = 'standing') {
         isChief = false,
         hasGlasses = false,
         beard = 'none',
+        hasSkirt = false,
     } = config;
 
     const outline = P.WALL_OUTLINE;
@@ -125,6 +126,26 @@ function _drawCharacterDirect(ctx, cx, bottomY, config, pose = 'standing') {
     }
 
     // Legs / pants
+    if (hasSkirt) {
+        // Skirt (A-line, covers upper legs)
+        ctx.fillStyle = pantsColor;
+        ctx.fillRect(-7, -12, 14, 5);
+        ctx.fillRect(-8, -10, 16, 3);
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-7, -12, 14, 5);
+        ctx.fillRect(-8, -10, 1, 3);
+        ctx.fillRect(7, -10, 1, 3);
+        // Lower legs (skin-colored, visible below skirt)
+        ctx.fillStyle = skinTone;
+        if (pose === 'walking') {
+            ctx.fillRect(-5, -7, 3, 4);
+            ctx.fillRect(2, -8, 3, 4);
+        } else {
+            ctx.fillRect(-4, -7, 3, 4);
+            ctx.fillRect(1, -7, 3, 4);
+        }
+    } else {
     ctx.fillStyle = pantsColor;
     if (pose === 'walking') {
         ctx.fillRect(-6, -12, 4, 9);
@@ -140,6 +161,7 @@ function _drawCharacterDirect(ctx, cx, bottomY, config, pose = 'standing') {
         ctx.lineWidth = 1;
         ctx.strokeRect(-5, -12, 4, 9);
         ctx.strokeRect(1, -12, 4, 9);
+    }
     }
     } // end non-sitting legs
 
@@ -492,8 +514,9 @@ export const NPC_CONFIGS = {
         hairColor: P.HAIR_GREY,
         hairStyle: 'bun',
         shirtColor: '#4A5068',
-        pantsColor: P.PANTS_NAVY,
+        pantsColor: '#3A3A5A',
         gender: 'female',
         hasGlasses: true,
+        hasSkirt: true,
     },
 };

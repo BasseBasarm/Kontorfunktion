@@ -96,7 +96,7 @@ export const DIALOGUE_DATA = {
         },
         B: {
             lines: [
-                { speaker: 'Sekretær', text: 'Han har blokket kalenderen.' },
+                { speaker: 'Sekretær', text: 'Hun har blokket kalenderen.' },
                 { speaker: 'Dig', text: 'Med hvad?' },
                 { speaker: 'Sekretær', text: 'Strategisk tænkning.' },
             ],
