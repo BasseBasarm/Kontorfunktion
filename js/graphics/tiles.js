@@ -730,6 +730,89 @@ function drawMeetingTable(ctx, x, y) {
     drawBox(ctx, x + 8, y + 1, 5, 3, 4, 'rgba(160,200,240,0.4)', 'rgba(120,170,220,0.3)', 'rgba(140,190,230,0.35)', 'rgba(100,150,200,0.4)');
 }
 
+// Draw large round meeting table (spans ~2 tiles visually)
+function drawRoundMeetingTable(ctx, x, y) {
+    const woodColor = '#9B8365';
+    const woodDark = '#6B5335';
+    const woodSide = '#8B7355';
+    const legColor = '#6B4B28';
+    const legDark = '#4B2B10';
+
+    // Central pedestal leg
+    drawIsoPillar(ctx, x, y + 6, 5, 4, 20, legColor, legDark, P.WALL_OUTLINE);
+    // Grounding shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(x - 6, y + 26, 12, 2);
+
+    // Large elliptical tabletop — drawn as isometric diamond shape
+    // Top face (ellipse)
+    ctx.fillStyle = woodColor;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 8);       // top
+    ctx.lineTo(x + 28, y + 6);  // right
+    ctx.lineTo(x, y + 20);      // bottom
+    ctx.lineTo(x - 28, y + 6);  // left
+    ctx.closePath();
+    ctx.fill();
+
+    // Edge thickness (front face of table)
+    ctx.fillStyle = woodDark;
+    ctx.beginPath();
+    ctx.moveTo(x - 28, y + 6);
+    ctx.lineTo(x, y + 20);
+    ctx.lineTo(x, y + 23);
+    ctx.lineTo(x - 28, y + 9);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = woodSide;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 20);
+    ctx.lineTo(x + 28, y + 6);
+    ctx.lineTo(x + 28, y + 9);
+    ctx.lineTo(x, y + 23);
+    ctx.closePath();
+    ctx.fill();
+
+    // Outline
+    ctx.strokeStyle = P.WALL_OUTLINE;
+    ctx.lineWidth = 1;
+    // Top face outline
+    ctx.beginPath();
+    ctx.moveTo(x, y - 8);
+    ctx.lineTo(x + 28, y + 6);
+    ctx.lineTo(x, y + 20);
+    ctx.lineTo(x - 28, y + 6);
+    ctx.closePath();
+    ctx.stroke();
+    // Front edge outline
+    ctx.beginPath();
+    ctx.moveTo(x - 28, y + 6);
+    ctx.lineTo(x - 28, y + 9);
+    ctx.lineTo(x, y + 23);
+    ctx.lineTo(x + 28, y + 9);
+    ctx.lineTo(x + 28, y + 6);
+    ctx.stroke();
+
+    // Papers on table
+    drawIsoDiamond(ctx, x - 8, y + 2, 12, 6, P.PAPER_WHITE, 'rgba(140,130,110,0.3)');
+    drawIsoDiamond(ctx, x + 6, y + 4, 10, 5, '#F0E8D8', 'rgba(140,130,110,0.2)');
+
+    // Pen
+    ctx.strokeStyle = '#2040A0';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x + 10, y + 1);
+    ctx.lineTo(x + 16, y - 1);
+    ctx.stroke();
+
+    // Water glass
+    drawBox(ctx, x - 14, y + 4, 5, 3, 4, 'rgba(160,200,240,0.4)', 'rgba(120,170,220,0.3)', 'rgba(140,190,230,0.35)', 'rgba(100,150,200,0.4)');
+
+    // Coffee cup
+    drawBox(ctx, x + 14, y + 3, 4, 3, 3, '#F5F0E8', '#D8D0C0', '#E8E0D0', P.WALL_OUTLINE);
+}
+
 // Draw toilet stall
 function drawToiletStall(ctx, x, y) {
     const h = WALL_HEIGHT;
@@ -1295,6 +1378,7 @@ export function drawTile(ctx, tileType, x, y, col, row) {
             drawCarpetTexture(ctx, x, y);
             break;
         case TILE.MEETING_TABLE:
+        case TILE.ROUND_TABLE:
             drawDiamond(ctx, x, y, isAlt ? P.FLOOR_MEETING : '#BEB498', 'rgba(140,130,100,0.3)');
             drawMeetingCarpet(ctx, x, y);
             break;
@@ -1437,6 +1521,9 @@ export function drawElevated(ctx, tileType, x, y) {
             break;
         case TILE.DYING_PLANT:
             drawDyingPlant(ctx, x, y);
+            break;
+        case TILE.ROUND_TABLE:
+            drawRoundMeetingTable(ctx, x, y);
             break;
     }
 }

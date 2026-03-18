@@ -44,6 +44,7 @@ const TG = T.TOILET_SIGN;
 const DC = T.DESK_CLUTTERED;
 const DK = T.DESK_TECH;
 const DP = T.DYING_PLANT;
+const RT = T.ROUND_TABLE;
 
 export const OFFICE_LAYOUT = [
     //0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21
@@ -56,7 +57,7 @@ export const OFFICE_LAYOUT = [
     [ _,  WE, F,  F,  F,  F,  F,  RB, F,  F,  F,  F,  F,  F,  F,  F,  CR, F,  DP, F,  WE, _], // row 6  corridor continued
     [ _,  WC, GS, GS, GS, GS, GS, WC, F,  DM, F,  F,  DC, F,  F,  DK, F,  D,  F,  F,  WE, _], // row 7  meeting north + desk islands
     [ _,  GE, F,  WB, F,  F,  F,  GE, F,  C,  F,  F,  C,  F,  F,  C,  F,  C,  F,  F,  WE, _], // row 8  meeting interior + chairs
-    [ _,  GE, MT, F,  MT, F,  F,  DR, F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  WE, _], // row 9  meeting tables + middle door
+    [ _,  GE, F,  RT, F,  F,  F,  DR, F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  WE, _], // row 9  round meeting table + middle door
     [ _,  GE, F,  F,  F,  F,  F,  DR, F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  WE, _], // row 10 meeting door + open floor
     [ _,  WC, WS, WS, WS, WS, WS, WC, F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  PL, F,  WE, _], // row 11 meeting south wall
     [ _,  WE, F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  F,  WE, _], // row 12 open floor

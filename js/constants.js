@@ -81,6 +81,7 @@ export const TILE = {
     DESK_CLUTTERED: 33,
     DESK_TECH: 34,
     DYING_PLANT: 35,
+    ROUND_TABLE: 36,
 };
 
 // Which tiles block movement
