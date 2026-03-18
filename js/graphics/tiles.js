@@ -735,99 +735,113 @@ function drawRoundMeetingTable(ctx, x, y) {
     const woodColor = '#9B8365';
     const woodDark = '#6B5335';
     const woodSide = '#8B7355';
+    const legColor = '#1E1E1E';
+    const legHighlight = '#333333';
+    const legW = 3;
 
-    // Large elliptical tabletop — drawn as isometric diamond shape
-    // Top face
-    ctx.fillStyle = woodColor;
-    ctx.beginPath();
-    ctx.moveTo(x, y - 8);       // top
-    ctx.lineTo(x + 28, y + 6);  // right
-    ctx.lineTo(x, y + 20);      // bottom
-    ctx.lineTo(x - 28, y + 6);  // left
-    ctx.closePath();
-    ctx.fill();
+    // Ellipse dimensions (isometric: wider than tall)
+    const rx = 26; // horizontal radius
+    const ry = 14; // vertical radius
+    const tableY = y + 6; // center of ellipse top face
+    const edgeH = 4; // thickness of table edge
 
-    // Edge thickness (front-left face)
+    // Back legs — drawn BEFORE surface (behind table)
+    ctx.fillStyle = legColor;
+    ctx.fillRect(x - 16, y - 2, legW, 18);
+    ctx.fillRect(x + 14, y - 2, legW, 18);
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(x - 16, y - 2, legW, 18);
+    ctx.strokeRect(x + 14, y - 2, legW, 18);
+
+    // Table edge (front half of cylinder) — drawn as lower ellipse
     ctx.fillStyle = woodDark;
     ctx.beginPath();
-    ctx.moveTo(x - 28, y + 6);
-    ctx.lineTo(x, y + 20);
-    ctx.lineTo(x, y + 24);
-    ctx.lineTo(x - 28, y + 10);
+    ctx.ellipse(x, tableY + edgeH, rx, ry, 0, 0, Math.PI);
+    ctx.lineTo(x - rx, tableY);
+    ctx.ellipse(x, tableY, rx, ry, 0, Math.PI, 0, true);
     ctx.closePath();
     ctx.fill();
 
-    // Edge thickness (front-right face)
+    // Right-side edge highlight
     ctx.fillStyle = woodSide;
     ctx.beginPath();
-    ctx.moveTo(x, y + 20);
-    ctx.lineTo(x + 28, y + 6);
-    ctx.lineTo(x + 28, y + 10);
-    ctx.lineTo(x, y + 24);
+    ctx.ellipse(x, tableY + edgeH, rx, ry, 0, -0.3, Math.PI * 0.3);
+    ctx.lineTo(x + rx * Math.cos(Math.PI * 0.3), tableY + ry * Math.sin(Math.PI * 0.3));
+    ctx.ellipse(x, tableY, rx, ry, 0, Math.PI * 0.3, -0.3, true);
     ctx.closePath();
+    ctx.fill();
+
+    // Table top face — ellipse
+    ctx.fillStyle = woodColor;
+    ctx.beginPath();
+    ctx.ellipse(x, tableY, rx, ry, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Outline
     ctx.strokeStyle = P.WALL_OUTLINE;
     ctx.lineWidth = 1;
+    // Top ellipse outline
     ctx.beginPath();
-    ctx.moveTo(x, y - 8);
-    ctx.lineTo(x + 28, y + 6);
-    ctx.lineTo(x, y + 20);
-    ctx.lineTo(x - 28, y + 6);
-    ctx.closePath();
+    ctx.ellipse(x, tableY, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
+    // Bottom edge outline (front half only)
     ctx.beginPath();
-    ctx.moveTo(x - 28, y + 6);
-    ctx.lineTo(x - 28, y + 10);
-    ctx.lineTo(x, y + 24);
-    ctx.lineTo(x + 28, y + 10);
-    ctx.lineTo(x + 28, y + 6);
+    ctx.ellipse(x, tableY + edgeH, rx, ry, 0, 0, Math.PI);
+    ctx.stroke();
+    // Vertical edge lines on sides
+    ctx.beginPath();
+    ctx.moveTo(x - rx, tableY);
+    ctx.lineTo(x - rx, tableY + edgeH);
+    ctx.moveTo(x + rx, tableY);
+    ctx.lineTo(x + rx, tableY + edgeH);
     ctx.stroke();
 
-    // 4 thick dark legs — drawn AFTER tabletop, extending BELOW table edge
-    // Table front-bottom edge is at y+24
-    const legW = 4;
-    const legH = 14;
-    const legColor = '#1E1E1E';
-    const legHighlight = '#333333';
+    // Front legs — drawn AFTER surface
+    // Ellipse bottom is at tableY + ry = y+20, edge bottom at y+24
+    // Legs start just below the front edge of the ellipse and go down
+    const legStartY = tableY + ry - 2; // y+18, slightly overlapping with bottom of ellipse
+    const frontLegH = 16;
 
     // Front-left leg
     ctx.fillStyle = legColor;
-    ctx.fillRect(x - 14, y + 22, legW, legH);
+    ctx.fillRect(x - 10, legStartY, legW, frontLegH);
     ctx.fillStyle = legHighlight;
-    ctx.fillRect(x - 14 + legW, y + 22, 1, legH);
-    ctx.strokeStyle = '#111';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(x - 14, y + 22, legW + 1, legH);
+    ctx.fillRect(x - 10 + legW, legStartY, 1, frontLegH);
 
     // Front-right leg
     ctx.fillStyle = legColor;
-    ctx.fillRect(x + 10, y + 22, legW, legH);
+    ctx.fillRect(x + 7, legStartY, legW, frontLegH);
     ctx.fillStyle = legHighlight;
-    ctx.fillRect(x + 10 + legW, y + 22, 1, legH);
-    ctx.strokeStyle = '#111';
-    ctx.strokeRect(x + 10, y + 22, legW + 1, legH);
+    ctx.fillRect(x + 7 + legW, legStartY, 1, frontLegH);
 
-    // Ground shadows
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillRect(x - 15, y + 36, 7, 2);
-    ctx.fillRect(x + 9, y + 36, 7, 2);
+    // Back-left leg (peeks out on left side)
+    ctx.fillStyle = legColor;
+    ctx.fillRect(x - rx + 2, tableY - 2, legW, 14);
+    ctx.fillStyle = legHighlight;
+    ctx.fillRect(x - rx + 2 + legW, tableY - 2, 1, 14);
+
+    // Back-right leg (peeks out on right side)
+    ctx.fillStyle = legColor;
+    ctx.fillRect(x + rx - 5, tableY - 2, legW, 14);
+    ctx.fillStyle = legHighlight;
+    ctx.fillRect(x + rx - 5 + legW, tableY - 2, 1, 14);
+
+    // Ground shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(x - 12, legStartY + frontLegH, 24, 2);
 
     // Papers on table
-    drawIsoDiamond(ctx, x - 8, y + 2, 12, 6, P.PAPER_WHITE, 'rgba(140,130,110,0.3)');
-    drawIsoDiamond(ctx, x + 6, y + 4, 10, 5, '#F0E8D8', 'rgba(140,130,110,0.2)');
+    drawIsoDiamond(ctx, x - 6, y + 2, 10, 5, P.PAPER_WHITE, 'rgba(140,130,110,0.3)');
+    drawIsoDiamond(ctx, x + 5, y + 5, 8, 4, '#F0E8D8', 'rgba(140,130,110,0.2)');
 
     // Pen
     ctx.strokeStyle = '#2040A0';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(x + 10, y + 1);
-    ctx.lineTo(x + 16, y - 1);
+    ctx.moveTo(x + 8, y + 2);
+    ctx.lineTo(x + 14, y);
     ctx.stroke();
-
-    // Water glass
-    drawBox(ctx, x - 14, y + 4, 5, 3, 4, 'rgba(160,200,240,0.4)', 'rgba(120,170,220,0.3)', 'rgba(140,190,230,0.35)', 'rgba(100,150,200,0.4)');
 }
 
 // Draw toilet stall
@@ -1014,37 +1028,44 @@ function drawWhiteboard(ctx, x, y) {
 
 // Helper: draw shared desk base (legs + surface) used by all desk variants
 function drawDeskBase(ctx, x, y) {
-    // Desk surface
+    // drawBox at (x, y+4), halfW=HW*1.4≈44.8, halfH=HH*1.3≈20.8, h=3
+    // Front-bottom point: y+25. Side bottoms: y+14.
+
+    // Desk surface FIRST
     drawBox(ctx, x, y + 4, HW * 1.4, HH * 1.3, 3, P.DESK_TOP, P.DESK_FRONT, P.DESK_SIDE, P.WALL_OUTLINE);
 
-    // Thick dark legs drawn AFTER surface — must extend BELOW the drawBox front face
-    // drawBox front-bottom is at approx y + 4 + HH*1.3 + 3 = y + 28
-    const legW = 4;
-    const legH = 14;
-    const legColor = '#1E1E1E';
-    const legHighlight = '#333333';
+    // 4 legs drawn AFTER surface — visible below the front face
+    // The front face bottom is at y+25, so legs start from y+25 downward
+    const legColor = '#1A1A1A';
+    const legHighlight = '#2E2E2E';
 
-    // Front-left leg (visible below left edge of desk front)
+    // Front-left leg — under the left portion of front face
     ctx.fillStyle = legColor;
-    ctx.fillRect(x - 12, y + 24, legW, legH);
+    ctx.fillRect(x - 10, y + 22, 3, 12);
     ctx.fillStyle = legHighlight;
-    ctx.fillRect(x - 12 + legW, y + 24, 1, legH);
-    ctx.strokeStyle = '#111';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(x - 12, y + 24, legW + 1, legH);
+    ctx.fillRect(x - 7, y + 22, 1, 12);
 
-    // Front-right leg
+    // Front-right leg — under the right portion of front face
     ctx.fillStyle = legColor;
-    ctx.fillRect(x + 9, y + 24, legW, legH);
+    ctx.fillRect(x + 7, y + 22, 3, 12);
     ctx.fillStyle = legHighlight;
-    ctx.fillRect(x + 9 + legW, y + 24, 1, legH);
-    ctx.strokeStyle = '#111';
-    ctx.strokeRect(x + 9, y + 24, legW + 1, legH);
+    ctx.fillRect(x + 10, y + 22, 1, 12);
 
-    // Ground shadows under front legs
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.fillRect(x - 13, y + 34, 6, 2);
-    ctx.fillRect(x + 8, y + 34, 6, 2);
+    // Back-left leg — peeks out on left side of desk
+    ctx.fillStyle = legColor;
+    ctx.fillRect(x - 22, y + 10, 3, 12);
+    ctx.fillStyle = legHighlight;
+    ctx.fillRect(x - 19, y + 10, 1, 12);
+
+    // Back-right leg — peeks out on right side of desk
+    ctx.fillStyle = legColor;
+    ctx.fillRect(x + 19, y + 10, 3, 12);
+    ctx.fillStyle = legHighlight;
+    ctx.fillRect(x + 22, y + 10, 1, 12);
+
+    // Ground shadow strip under desk
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(x - 14, y + 33, 28, 2);
 }
 
 // Draw messy desk — papers scattered, coffee cup, tilted monitor
