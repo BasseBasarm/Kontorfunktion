@@ -80,7 +80,7 @@ export const NPC_POSITIONS = [
     { id: 'rådgiver', col: 16, row: 3, type: 'raadgiver', atDesk: true },        // at senior desk
     { id: 'mødedeltager', col: 6, row: 10, type: 'moededeltager' },
     { id: 'kaffe_kollega', col: 5, row: 15, type: 'kaffe' },
-    { id: 'toilet_kollega', col: 14, row: 15, type: 'toilet' },
+    { id: 'toilet_kollega', col: 15, row: 15, type: 'toilet' },
     { id: 'minister', col: 3, row: 3, type: 'minister' },
 ];
 
